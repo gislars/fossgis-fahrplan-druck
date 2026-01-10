@@ -1,6 +1,6 @@
 # c3-fahrplan-druck
 
-[![Live Demo](https://img.shields.io/badge/Live%20Demo-c3--fahrplan--druck.divo.link%2Fweb-blue?style=flat-square)](https://c3-fahrplan-druck.divo.link/web)
+[![Live Demo](https://gislars.github.io/fossgis-fahrplan-druck/web/)](https://gislars.github.io/fossgis-fahrplan-druck/web/)
 
 The [Fahrplan](https://fahrplan.events.ccc.de/congress/2025/fahrplan) in the style of a [Fahrplan](https://upload.wikimedia.org/wikipedia/commons/e/ed/Bremen%2C_Fahrplan_(Hbf).jpg).
 

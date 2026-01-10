@@ -49,21 +49,28 @@
 }
 
 @page {
-  size: portrait;
-  width: 914.4mm; /* DIN A0+ with margins */
+  size: A0 portrait;
+  width: 841mm; /* DIN A0 with margins */
   height: auto;
   margin: 10mm; /* adjust as needed */
 }
 
 @media print {
   html, body {
-    width: 914.4mm; /* DIN A0+ with margins */
+    width: 841mm; /* DIN A0 with margins */
     height: auto;
     overflow: visible;
   }
   /* ensure content scales and avoids page breaks */
   body { box-sizing: border-box; margin: 0; }
   .no-break { page-break-inside: avoid; }
+  
+  /* Force background colors and images to print */
+  * {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+    color-adjust: exact;
+  }
 }
 
 * {
@@ -73,14 +80,14 @@
 }
 
 :root {
-    --accent-color: #ff3719;
+    --accent-color: #EE7F00;
 }
 
 body {
     font-family: 'OfficerSans', "Segoe UI", Arial, sans-serif;
     background-color: white;
     padding: 40px;
-    width: 914.4mm;
+    width: 841mm; /* DIN A0 */
     margin: 0;
     overflow: visible;
 }
@@ -110,6 +117,18 @@ noscript {
 
 .header-left {
     font-weight: normal;
+}
+
+.fg26-logo {
+    height: 2em;
+    min-height: 2em;
+    width: 200px;
+    max-width: 200px;
+    display: block;
+    background-image: url('https://www.fossgis.de/mediawiki/images/d/d3/FOSSGIS_Logo_RGB_100x45mm_600dpi.png');
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: right center;
 }
 
 .header-right {
@@ -157,8 +176,8 @@ noscript {
 
 .column-headers {
     display: grid;
-    grid-template-columns: 56px 72px 1.4fr 36px;
-    gap: 2px;
+    grid-template-columns: 56px 85px 1.4fr 50px;
+    gap: 6px;
     padding: 7px 3px 6px 3px;
     background-color: #d0d0d0;
     border-bottom: none;
@@ -169,7 +188,7 @@ noscript {
 
 .column-headers-wrapper {
     display: grid;
-    grid-template-columns: repeat(8, 1fr);
+    grid-template-columns: repeat(4, 1fr);
     column-gap: 12px;
     row-gap: 0;
     width: 100%;
@@ -194,8 +213,8 @@ noscript {
 
 .time-range {
     display: grid;
-    grid-template-columns: 56px 72px 1fr 50px;
-    gap: 2px;
+    grid-template-columns: 56px 85px 1fr 50px;
+    gap: 6px;
     padding: 0 3px;
     background-color: #000;
     color: white;
@@ -256,8 +275,8 @@ noscript {
 }
 
 .qr-code-placeholder {
-    width: 80px;
-    height: 80px;
+    width: 120px;
+    height: 120px;
 
     background-color: #f5f5f5;
     float: right;
@@ -266,9 +285,9 @@ noscript {
 
 .departure-table {
     display: block;
-    column-count: 8;
-    -moz-column-count: 8;
-    -webkit-column-count: 8;
+    column-count: 4;
+    -moz-column-count: 4;
+    -webkit-column-count: 4;
     column-gap: 12px;
     -moz-column-gap: 12px;
     -webkit-column-gap: 12px;
@@ -288,10 +307,20 @@ noscript {
     color: #333;
 }
 
+.departure-row.break-row {
+    background-color: #f5f5f5;
+    border-left: 3px solid #999;
+}
+
+.departure-row.break-row .destination {
+    font-style: italic;
+    color: #666;
+}
+
 .departure-row {
     display: grid;
-    grid-template-columns: 56px 72px 1.4fr 36px;
-    column-gap: 2px;
+    grid-template-columns: 56px 85px 1.4fr 50px;
+    column-gap: 6px;
     padding: 0;
     background-color: white;
     border-bottom: 1px solid #000;
@@ -302,7 +331,7 @@ noscript {
 }
 
 .time {
-    font-size: 18px;
+    font-size: 20px;
     font-weight: bold;
     line-height: 1;
     background: #e8e8e8;
@@ -332,7 +361,7 @@ noscript {
 }
 
 .train-number {
-    font-size: 14px;
+    font-size: 16px;
     font-weight: bold;
     line-height: 1.2;
 }
@@ -364,7 +393,7 @@ noscript {
 
 .station {
     font-weight: normal;
-    font-size: 12px;
+    font-size: 14px;
 }
 
 .room-name {
@@ -375,12 +404,12 @@ noscript {
 
 .station-time {
     font-weight: normal;
-    font-size: 12px;
+    font-size: 14px;
 }
 
 .destination {
     font-weight: bold;
-    font-size: 16px;
+    font-size: 18px;
     display: block;
 }
 
@@ -405,8 +434,20 @@ noscript {
 }
 
 .row-number {
-    font-size: 14px;
+    font-size: 16px;
     font-weight: bold;
     text-align: right;
     line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 2px;
+    flex-wrap: nowrap;
+}
+
+.row-number [data-lucide] {
+    width: 0.9em;
+    height: 0.9em;
+    stroke-width: 2px;
+    flex-shrink: 0;
 }
