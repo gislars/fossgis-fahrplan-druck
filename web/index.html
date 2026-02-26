@@ -361,6 +361,7 @@
                     if (roomName.startsWith('OSM2')) return 'OSM2';
                     if (roomName.startsWith('OSM3')) return 'OSM3';
                     if (roomName.includes('Opening OSM')) return 'OO';
+                    if (roomName.toLowerCase().includes('posterausstellung')) return 'Post';
                     
                     return '*';
                 };
@@ -412,7 +413,8 @@
                         trackCode: trackCode,
                         isLightningTalk: false,
                         isMitgliederversammlung: false,
-                        isWorkshop: false
+                        isWorkshop: false,
+                        isPosterausstellung: false
                     };
                     
                     // Lightning Talk: 5 Minuten Dauer
@@ -433,6 +435,12 @@
                     if ((row.roomName && (row.roomName.startsWith('WS') || row.roomName.toLowerCase().includes('workshop'))) ||
                         (row.title && row.title.toLowerCase().includes('workshop'))) {
                         result.isWorkshop = true;
+                        return result;
+                    }
+                    
+                    // Posterausstellung: Raum heißt "Posterausstellung" (z. B. Mi/Do im Foyer)
+                    if (row.roomName && row.roomName.toLowerCase().includes('posterausstellung')) {
+                        result.isPosterausstellung = true;
                         return result;
                     }
                     
@@ -477,6 +485,9 @@
                     
                     // Workshop icon
                     const workshopIcon = eventType.isWorkshop ? '&#8239;<i data-lucide="wrench"></i>' : '';
+                    
+                    // Posterausstellung icon
+                    const posterausstellungIcon = eventType.isPosterausstellung ? '&#8239;<i data-lucide="layout-grid"></i>' : '';
 
                     const roomAbbrev = abbreviateRoom(row.roomName);
                     const trainClass = redRoomsList.includes(roomAbbrev) ? ' train-number-red' : '';
@@ -496,7 +507,7 @@
                     <span class="station">${speaker}</span>
                     <span class="station-time">(&#8239;→&#8239;${toHours(toMinutes(row.start) + duration)}&#8239;)${roomNameDisplay}</span>
                 </div>
-                <div class="row-number">${lightningIcon}${mvIcon}${sektempfangIcon}${workshopIcon}${roomAbbrev}</div>
+                <div class="row-number">${lightningIcon}${mvIcon}${sektempfangIcon}${workshopIcon}${posterausstellungIcon}${roomAbbrev}</div>
             </div>`;
                 };
 
@@ -601,9 +612,11 @@
                                 <tr><td><i data-lucide="camera"></i></td><td>bitte lächeln, Gruppenfoto wird aufgenommen</td></tr>
                                 <tr><td><i data-lucide="ticket-check"></i></td><td>Check-In, Ticket bereit halten</td></tr>
                                 <tr><td><i data-lucide="wrench"></i></td><td>Workshop, Werkzeugkasten mitbringen</td></tr>
+                                <tr><td><i data-lucide="layout-grid"></i></td><td>Posterausstellung, Aushänge beachten!</td></tr>
                                 <tr><td><i data-lucide="users"></i></td><td>Mitgliederversammlung, Stimmrecht mitbringen</td></tr>
                                 <tr><td><i data-lucide="zap"></i></td><td>Lightning Talk, schnell einsteigen</td></tr>
                         </table>
+                        <p class="legend-note" style="margin-top: 0.75em; font-size: 0.95em;">Die Posterausstellung findet am Donnerstag, insbesondere in den Pausen im Foyer statt. Die Poster hängen von Mittwoch 12 Uhr bis Freitagnachmittag.</p>
                 </div>
 
                 <div style="height: 1em;"></div>
@@ -614,15 +627,15 @@
                         <div style="display: flex; gap: 1em; align-items: center; flex-wrap: wrap;">
                                 <div>
                                         <img src="https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=https://bahnhof.de" alt="QR Code" class="qr-code-placeholder">
-                                        <div style="font-size: 0.8em; text-align: center; margin-top: 0.25em;">bahnhof.de</div>
+                                        <div style="font-size: 0.8em; text-align: center; margin-top: 0.25em;"><a href="https://bahnhof.de" target="_blank" rel="noopener">bahnhof.de</a></div>
                                 </div>
                                 <div>
                                         <img src="https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=https://pretalx.com/fossgis2026/schedule/" alt="QR Code Online-Fahrplan" class="qr-code-placeholder">
-                                        <div style="font-size: 0.8em; text-align: center; margin-top: 0.25em;">Online-Fahrplan (pretalx)</div>
+                                        <div style="font-size: 0.8em; text-align: center; margin-top: 0.25em;"><a href="https://pretalx.com/fossgis2026/schedule/" target="_blank" rel="noopener">Online-Fahrplan (pretalx)</a></div>
                                 </div>
                                 <div>
                                         <img src="https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=https://gislars.github.io/fossgis-fahrplan-druck/web/" alt="QR Code Fahrplan-Druck" class="qr-code-placeholder">
-                                        <div style="font-size: 0.8em; text-align: center; margin-top: 0.25em;">Fahrplan-Druck (online)</div>
+                                        <div style="font-size: 0.8em; text-align: center; margin-top: 0.25em;"><a href="https://gislars.github.io/fossgis-fahrplan-druck/web/" target="_blank" rel="noopener">Fahrplan-Druck (online)</a></div>
                                 </div>
                         </div>
                         <br>
