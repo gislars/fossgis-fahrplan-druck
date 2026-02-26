@@ -74,15 +74,22 @@
     --tinted-background-color: rgb(252, 209, 22); /* FOSSGIS-Hintergrund */
     --column-headers-bg-color: #d0d0d0cc;
     --cell-padding: 2px 3px;
+    --columns: 4;
+    --page-width: 841mm;
 }
 
 body {
     font-family: 'OfficerSans', "Segoe UI", Arial, sans-serif;
     background-color: white;
     padding: 40px;
-    width: 841mm; /* DIN A0 */
+    width: var(--page-width);
     margin: 0;
     overflow: visible;
+}
+
+body.mobile-columns {
+    width: 100vw;
+    padding: 16px;
 }
 
 body.tinted-background {
@@ -174,7 +181,7 @@ noscript {
 
 .column-headers-wrapper {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(var(--columns), 1fr);
     column-gap: 12px;
     row-gap: 0;
     width: 100%;
@@ -287,9 +294,13 @@ noscript {
 
 .departure-table {
     display: block;
-    column-count: 4;
-    -moz-column-count: 4;
-    -webkit-column-count: 4;
+    border-bottom: 1px solid #000;
+}
+
+.departure-table-content {
+    column-count: var(--columns);
+    -moz-column-count: var(--columns);
+    -webkit-column-count: var(--columns);
     column-gap: 12px;
     -moz-column-gap: 12px;
     -webkit-column-gap: 12px;
