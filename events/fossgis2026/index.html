@@ -9,7 +9,7 @@
     <link rel="stylesheet" href="style.css">
 </head>
 
-<body>
+<body class="tinted-background">
     <noscript>JavaScript is required to render the schedule. Please enable it and reload.</noscript>
     <div class="schedule-container">
         <!-- Header -->
@@ -152,13 +152,28 @@
                 // Rooms that should be displayed in accent color
                 const redRoomsList = ['HS1','HS2','HS3','HS4'];
 
+                // Erster Konferenztag (Jahr, Monat 1–12, Tag) – Video-Links ab dem zweiten Tag
+                const conferenceStartDate = new Date(2026, 2, 24); // 24.03.2026
+                const recordingsAvailableFrom = new Date(conferenceStartDate);
+                recordingsAvailableFrom.setDate(recordingsAvailableFrom.getDate() + 1);
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+                recordingsAvailableFrom.setHours(0, 0, 0, 0);
+                const recordingsAvailable = today >= recordingsAvailableFrom;
+
                 // URL parameter parsing
                 const params = new URLSearchParams(location.search);
                 const onlyDayParam = params.get('only-day');
                 const onlyTrackParam = params.get('only-track');
                 const onlyRoomParam = params.get('only-room');
+                const tintedBackgroundParam = params.get('tinted-background');
                 const isSingleDay = onlyDayParam !== null;
                 const selectedDay = parseInt(onlyDayParam ?? '1', 10);
+
+                // Optional: gelben Hintergrund (RAL 1003) ausschalten, z. B. für Druck auf gelbem Papier
+                if (tintedBackgroundParam === 'false') {
+                    document.body.classList.remove('tinted-background');
+                }
 
                 // DOM hooks
                 const headerLeft = document.querySelector('.header-left');
@@ -468,8 +483,12 @@
                     // Check if this is a Sektempfang
                     const isSektempfang = row.title && (row.title.toLowerCase().includes('sektempfang') || row.title.toLowerCase().includes('sekt'));
 
+                    // Video-Icon: vor 2. Konferenztag nur Icon, ab 2. Tag Link zu media.ccc.de
+                    const recordingUrl = (row.do_not_record === false && row.slug) ? `https://media.ccc.de/v/${row.slug}` : '';
                     const recordingIcon = (row.do_not_record === false)
-                        ? '<div class="no-video-icon"><i data-lucide="video"></i></div>'
+                        ? (recordingsAvailable && recordingUrl
+                            ? `<a class="no-video-icon" href="${recordingUrl}" target="_blank" rel="noopener" title="Aufzeichnung"><i data-lucide="video"></i></a>`
+                            : '<div class="no-video-icon"><i data-lucide="video"></i></div>')
                         : (row.do_not_record === true)
                             ? '<div class="no-video-icon"><i data-lucide="video-off"></i></div>'
                             : '';
@@ -624,18 +643,22 @@
                 <div class="legend-footer">
                         Angaben mit Gewähr - Änderungen und Irrtümer vorbehalten.<br><br>
                         * Du suchst hier leider an der falschen Stelle.<br><br>
-                        <div style="display: flex; gap: 1em; align-items: center; flex-wrap: wrap;">
+                        <div class="qr-codes-row">
                                 <div>
-                                        <img src="https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=https://bahnhof.de" alt="QR Code" class="qr-code-placeholder">
+                                        <img src="assets/qr-bahnhof_de.png" alt="QR Code bahnhof.de" class="qr-code-placeholder">
                                         <div style="font-size: 0.8em; text-align: center; margin-top: 0.25em;"><a href="https://bahnhof.de" target="_blank" rel="noopener">bahnhof.de</a></div>
                                 </div>
                                 <div>
-                                        <img src="https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=https://pretalx.com/fossgis2026/schedule/" alt="QR Code Online-Fahrplan" class="qr-code-placeholder">
+                                        <img src="assets/qr-fahrplan_pretalx_2026.png" alt="QR Code Online-Fahrplan" class="qr-code-placeholder">
                                         <div style="font-size: 0.8em; text-align: center; margin-top: 0.25em;"><a href="https://pretalx.com/fossgis2026/schedule/" target="_blank" rel="noopener">Online-Fahrplan (pretalx)</a></div>
                                 </div>
                                 <div>
-                                        <img src="https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=https://gislars.github.io/fossgis-fahrplan-druck/web/" alt="QR Code Fahrplan-Druck" class="qr-code-placeholder">
-                                        <div style="font-size: 0.8em; text-align: center; margin-top: 0.25em;"><a href="https://gislars.github.io/fossgis-fahrplan-druck/web/" target="_blank" rel="noopener">Fahrplan-Druck (online)</a></div>
+                                        <img src="assets/qr-fahrplan_druck_online_2026.png" alt="QR Code Fahrplan-Druck" class="qr-code-placeholder">
+                                        <div style="font-size: 0.8em; text-align: center; margin-top: 0.25em;"><a href="https://gislars.github.io/fossgis-fahrplan-druck/events/fossgis2026/" target="_blank" rel="noopener">Fahrplan-Druck (online)</a></div>
+                                </div>
+                                <div>
+                                        <img src="assets/qr-fossgis-mastodon.png" alt="QR Code FOSSGIS Mastodon" class="qr-code-placeholder">
+                                        <div style="font-size: 0.8em; text-align: center; margin-top: 0.25em;"><a href="https://mastodon.online/@FOSSGISeV" target="_blank" rel="noopener">FOSSGIS Mastodon</a></div>
                                 </div>
                         </div>
                         <br>
