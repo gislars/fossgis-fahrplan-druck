@@ -4,7 +4,7 @@
 
 Fork von [c3-fahrplan-druck](https://github.com/felixdivo/c3-fahrplan-druck) für die FOSSGIS-Konferenz.
 
-[![Live Demo](https://gislars.github.io/fossgis-fahrplan-druck/web/)](https://gislars.github.io/fossgis-fahrplan-druck/web/)
+[![Live Demo](https://gislars.github.io/fossgis-fahrplan-druck/events/fossgis2026/)](https://gislars.github.io/fossgis-fahrplan-druck/events/fossgis2026/)
 
 The [Fahrplan](https://fahrplan.events.ccc.de/congress/2025/fahrplan) in the style of a [Fahrplan](https://upload.wikimedia.org/wikipedia/commons/e/ed/Bremen%2C_Fahrplan_(Hbf).jpg).
 
