@@ -30,84 +30,34 @@
             <div class="station-name">FOSSGIS Konferenz 2026</div>
         </div>
 
-        <!-- Column Headers - Repeated 4 times -->
-        <div class="column-headers-wrapper">
-            <div class="column-headers">
-                <div>
-                    <div class="column-header-bold">Zeit</div>
-                    <div class="column-header-italic">Time</div>
+        <!-- Column Headers (Anzahl per URL-Parameter columns, z. B. columns=mobile) -->
+        <div class="column-headers-wrapper" id="column-headers-wrapper">
+            <template id="column-headers-template">
+                <div class="column-headers">
+                    <div>
+                        <div class="column-header-bold">Zeit</div>
+                        <div class="column-header-italic">Time</div>
+                    </div>
+                    <div>
+                        <div class="column-header-bold">Zug</div>
+                        <div class="column-header-italic">Train</div>
+                    </div>
+                    <div>
+                        <div class="column-header-bold">Richtung</div>
+                        <div class="column-header-italic">Destination</div>
+                    </div>
+                    <div class="col-platform">
+                        <div class="column-header-bold">Gleis</div>
+                        <div class="column-header-italic">Platform</div>
+                    </div>
                 </div>
-                <div>
-                    <div class="column-header-bold">Zug</div>
-                    <div class="column-header-italic">Train</div>
-                </div>
-                <div>
-                    <div class="column-header-bold">Richtung</div>
-                    <div class="column-header-italic">Destination</div>
-                </div>
-                <div class="col-platform">
-                    <div class="column-header-bold">Gleis</div>
-                    <div class="column-header-italic">Platform</div>
-                </div>
-            </div>
-            <div class="column-headers">
-                <div>
-                    <div class="column-header-bold">Zeit</div>
-                    <div class="column-header-italic">Time</div>
-                </div>
-                <div>
-                    <div class="column-header-bold">Zug</div>
-                    <div class="column-header-italic">Train</div>
-                </div>
-                <div>
-                    <div class="column-header-bold">Richtung</div>
-                    <div class="column-header-italic">Destination</div>
-                </div>
-                <div class="col-platform">
-                    <div class="column-header-bold">Gleis</div>
-                    <div class="column-header-italic">Platform</div>
-                </div>
-            </div>
-            <div class="column-headers">
-                <div>
-                    <div class="column-header-bold">Zeit</div>
-                    <div class="column-header-italic">Time</div>
-                </div>
-                <div>
-                    <div class="column-header-bold">Zug</div>
-                    <div class="column-header-italic">Train</div>
-                </div>
-                <div>
-                    <div class="column-header-bold">Richtung</div>
-                    <div class="column-header-italic">Destination</div>
-                </div>
-                <div class="col-platform">
-                    <div class="column-header-bold">Gleis</div>
-                    <div class="column-header-italic">Platform</div>
-                </div>
-            </div>
-            <div class="column-headers">
-                <div>
-                    <div class="column-header-bold">Zeit</div>
-                    <div class="column-header-italic">Time</div>
-                </div>
-                <div>
-                    <div class="column-header-bold">Zug</div>
-                    <div class="column-header-italic">Train</div>
-                </div>
-                <div>
-                    <div class="column-header-bold">Richtung</div>
-                    <div class="column-header-italic">Destination</div>
-                </div>
-                <div class="col-platform">
-                    <div class="column-header-bold">Gleis</div>
-                    <div class="column-header-italic">Platform</div>
-                </div>
-            </div>
+            </template>
         </div>
 
-        <!-- Departure Rows -->
-        <div class="departure-table"></div>
+        <!-- Departure Rows (Struktur wie Upstream: Inhalt in .departure-table-content) -->
+        <div class="departure-table">
+            <div class="departure-table-content"></div>
+        </div>
     </div>
 
         <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
@@ -167,8 +117,17 @@
                 const onlyTrackParam = params.get('only-track');
                 const onlyRoomParam = params.get('only-room');
                 const tintedBackgroundParam = params.get('tinted-background');
+                const columnsRaw = params.get('columns') ?? '4';
                 const isSingleDay = onlyDayParam !== null;
                 const selectedDay = parseInt(onlyDayParam ?? '1', 10);
+
+                // columns: mobile = 1 Spalte + volle Breite, sonst 1–4 (Standard 4)
+                const isMobileColumns = columnsRaw.toLowerCase() === 'mobile';
+                const columnsParam = parseInt(columnsRaw, 10);
+                const columns = isMobileColumns ? 1 : (Number.isFinite(columnsParam) && columnsParam > 0 ? Math.min(columnsParam, 4) : 4);
+                document.documentElement.style.setProperty('--columns', String(columns));
+                document.documentElement.style.setProperty('--page-width', isMobileColumns ? '100vw' : `${(841 / 4) * columns}mm`);
+                document.body.classList.toggle('mobile-columns', isMobileColumns);
 
                 // Optional: gelben Hintergrund (RAL 1003) ausschalten, z. B. für Druck auf gelbem Papier
                 if (tintedBackgroundParam === 'false') {
@@ -178,8 +137,17 @@
                 // DOM hooks
                 const headerLeft = document.querySelector('.header-left');
                 const stationNameEl = document.querySelector('.station-name');
+                const columnHeadersWrapper = document.getElementById('column-headers-wrapper');
+                const columnHeadersTemplate = document.getElementById('column-headers-template');
                 const departureTable = document.querySelector('.departure-table');
-                if (!departureTable) return;
+                const departureTableContent = document.querySelector('.departure-table-content');
+                if (!departureTable || !departureTableContent || !columnHeadersWrapper || !columnHeadersTemplate) return;
+
+                // Spaltenköpfe passend zu columns erzeugen
+                columnHeadersWrapper.innerHTML = '';
+                for (let i = 0; i < columns; i += 1) {
+                    columnHeadersWrapper.appendChild(columnHeadersTemplate.content.cloneNode(true));
+                }
 
                 // Apply header labels
                 if (headerLeft && headerDateRange) headerLeft.textContent = headerDateRange;
@@ -219,9 +187,9 @@
                 };
 
                 const showError = (msg) => {
-                    departureTable.innerHTML = `<div class="no-data">${msg}</div>`;
+                    departureTableContent.innerHTML = `<div class="no-data">${msg}</div>`;
                 };
-                departureTable.innerHTML = '<div class="loading">Lade Inhalte…</div>';
+                departureTableContent.innerHTML = '<div class="loading">Lade Inhalte…</div>';
 
                 // Fetch schedule data
                 let data;
@@ -715,7 +683,7 @@
                         return aRoom.localeCompare(bRoom);
                     });
 
-                    departureTable.innerHTML = '';
+                    departureTableContent.innerHTML = '';
                     let currentDay = null;
                     allTalks.forEach((row) => {
                         if (currentDay !== row.dayIndex) {
@@ -727,15 +695,15 @@
                                 <div>Tag ${row.dayIndex}</div>
                                 <div></div>
                         </div>`;
-                            departureTable.insertAdjacentHTML('beforeend', dayHTML);
+                            departureTableContent.insertAdjacentHTML('beforeend', dayHTML);
                         }
 
-                        departureTable.insertAdjacentHTML('beforeend', renderRow(row));
+                        departureTableContent.insertAdjacentHTML('beforeend', renderRow(row));
                     });
 
                     // Legend footer text (original)
-                    const legend = renderLegend(formattedVersion, `Dieser Fahplan ist bis Tag ${totalDays} (16:00) Eigentum der FOSSGIS Bahn. Danach geht er in die chaotische Selbstverwaltung über und darf legal entwendet werden.`);
-                    departureTable.insertAdjacentHTML('beforeend', legend);
+                    const legend = renderLegend(formattedVersion, `Dieser Fahrplan ist bis Tag ${totalDays} (16:00) Eigentum der FOSSGIS-Konferenz. Danach geht er in die chaotische Selbstverwaltung über und darf legal entwendet werden.`);
+                    departureTableContent.insertAdjacentHTML('beforeend', legend);
                 } else {
                     // Single-day view
                     // Single-day rendering
@@ -788,7 +756,7 @@
                         headerLeft.textContent = `${day}.${month}.${year} — Tag ${selectedDay}`;
                     }
 
-                    departureTable.innerHTML = '';
+                    departureTableContent.innerHTML = '';
                     let currentRange = null;
                     dayTalks.forEach((row, idx) => {
                         const rangeLabel = getTimeRangeLabel(row.start);
@@ -801,11 +769,11 @@
                             <div>${rangeLabel}</div>
                             <div></div>
                         </div>`;
-                            departureTable.insertAdjacentHTML('beforeend', `<div class="time-range-group">${headerHTML}`);
-                            departureTable.insertAdjacentHTML('beforeend', renderRow(row));
-                            departureTable.insertAdjacentHTML('beforeend', '</div>');
+                            departureTableContent.insertAdjacentHTML('beforeend', `<div class="time-range-group">${headerHTML}`);
+                            departureTableContent.insertAdjacentHTML('beforeend', renderRow(row));
+                            departureTableContent.insertAdjacentHTML('beforeend', '</div>');
                         } else {
-                            departureTable.insertAdjacentHTML('beforeend', renderRow(row));
+                            departureTableContent.insertAdjacentHTML('beforeend', renderRow(row));
                         }
                     });
 
@@ -814,7 +782,7 @@
                         : `Nimm mich ab Tag ${selectedDay + 1} mit, aber lass das Klebeband da.`;
 
                     const legend = renderLegend(formattedVersion, takeWithText);
-                    departureTable.insertAdjacentHTML('beforeend', legend);
+                    departureTableContent.insertAdjacentHTML('beforeend', legend);
                 }
 
                 if (window.lucide) window.lucide.createIcons();

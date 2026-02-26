@@ -1,12 +1,27 @@
-![Example Screenshot of the Fahrplan View](doc/example_screenshot.png)
+![Example Screenshot of the Fahrplan View](doc/example_screenshot_fossgis2026.png)
 
 # fossgis-fahrplan-druck
 
 Fork von [c3-fahrplan-druck](https://github.com/felixdivo/c3-fahrplan-druck) für die FOSSGIS-Konferenz.
 
-[![Live Demo](https://gislars.github.io/fossgis-fahrplan-druck/events/fossgis2026/)](https://gislars.github.io/fossgis-fahrplan-druck/events/fossgis2026/)
-
 The [Fahrplan](https://fahrplan.events.ccc.de/congress/2025/fahrplan) in the style of a [Fahrplan](https://upload.wikimedia.org/wikipedia/commons/e/ed/Bremen%2C_Fahrplan_(Hbf).jpg).
+
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-FOSSGIS%202026-blue?style=flat-square)](https://gislars.github.io/fossgis-fahrplan-druck/events/fossgis2026/)
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-mobile-blue?style=flat-square)](https://gislars.github.io/fossgis-fahrplan-druck/events/fossgis2026/?columns=mobile)
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-A0%2B%20Druck-blue?style=flat-square)](https://gislars.github.io/fossgis-fahrplan-druck/events/fossgis2026/?tinted-background=false)
+
+## Anpassung für FOSSGIS
+
+Dieses Repository ist ein Fork für die FOSSGIS-Konferenz. Geplant ist, Änderungen von [c3-fahrplan-druck](https://github.com/felixdivo/c3-fahrplan-druck) (Upstream) mitzuziehen, damit Verbesserungen und Fixes dort auch hier ankommen.
+
+**FOSSGIS-spezifisch angepasst wurden u. a.:**
+
+- **Events:** `events/fossgis2026/` (und ggf. weitere FOSSGIS-Jahrgänge) mit Pretalx-Feed, FOSSGIS-Tracks und -Räumen; Pausen werden aus dem Pretalx-Widget übernommen und angezeigt.
+- **Branding:** FOSSGIS-Logo (farbig), FOSSGIS-Farben (Akzent HKS 6 K, Hintergrund für getönte Ansicht), Legendentext.
+- **Struktur:** CCC-spezifische Styles/Referenzen (z. B. 39c3-Logo, Kario-Font) in den FOSSGIS-Events entfernt oder durch FOSSGIS-Varianten ersetzt. 
+- **only-track:** Die Sonderwerte `fahrplan` (Hauptbühne) und `abfahrplan` (Musik-Floors) existieren bei FOSSGIS nicht und werden ignoriert; `only-track` filtert nur nach Track-Namen bzw. -Kürzeln.
+- **Customization:** Neben den gleichen Top-Level-Konstanten wie im Upstream nutzen die FOSSGIS-Events zusätzlich z. B. `breakRoomName`, `breakPrefix`, `breakTitlePrefix`, `redRoomsList` sowie `conferenceStartDate`/`recordingsAvailableFrom` für Pausen und Aufzeichnungs-Links; Raumnamen und Kürzel stehen in der Funktion `abbreviateRoom()`.
+- **QR-Codes:** Das Skript `scripts/generate_qr_code.py` erzeugt QR-Codes mit runden Modulen, optionalem Logo und Beschriftung für Links (z. B. Fahrplan-URL, Pretalx, Mastodon); siehe `assets/README.md`.
 
 ## Quick use
 
