@@ -40,14 +40,14 @@
 
 @page {
   size: A0 portrait;
-  width: 841mm; /* DIN A0 with margins */
+  width: 841mm; /* DIN A0 */
   height: auto;
-  margin: 10mm; /* adjust as needed */
+  margin: 10mm;
 }
 
 @media print {
   html, body {
-    width: 841mm; /* DIN A0 with margins */
+    width: 841mm;
     height: auto;
     overflow: visible;
   }
@@ -76,6 +76,8 @@
     --cell-padding: 2px 3px;
     --columns: 4;
     --page-width: 841mm;
+    --grid-cols-header: 56px 85px 1.4fr 50px;
+    --grid-cols-content: 56px 85px 1.4fr 50px;
 }
 
 body {
@@ -169,14 +171,28 @@ noscript {
     font-size: 36px;
 }
 
+.station-name a {
+    color: inherit;
+    text-decoration: none;
+}
+
+.station-name a:hover {
+    text-decoration: underline;
+}
+
 .column-headers {
     display: grid;
-    grid-template-columns: 56px 85px 1.4fr 50px;
-    gap: 2px;
-    padding: 7px 3px 6px 3px;
+    grid-template-columns: var(--grid-cols-header);
+    column-gap: 6px;
+    padding: 7px 0 6px 0;
     background-color: var(--column-headers-bg-color);
     font-size: 12px;
     margin-bottom: 1px;
+}
+
+.column-headers > div {
+    padding-left: 3px;
+    padding-right: 3px;
 }
 
 .column-headers-wrapper {
@@ -206,11 +222,11 @@ noscript {
 
 .time-range {
     display: grid;
-    grid-template-columns: 56px 85px 1fr 50px;
+    grid-template-columns: var(--grid-cols-header);
     gap: 6px;
     padding: 0 3px;
     background-color: #000;
-    color: white;
+    color: var(--column-headers-bg-color);
     font-size: 16px;
     font-weight: bold;
     letter-spacing: -0.5px;
@@ -219,11 +235,33 @@ noscript {
     break-inside: avoid;
 }
 
+.time-range a {
+    color: var(--column-headers-bg-color);
+    text-decoration: none;
+}
+
+.time-range a:hover {
+    text-decoration: underline;
+}
+
 .time-range-group {
     -webkit-column-break-inside: avoid;
     -moz-column-break-inside: avoid;
     column-break-inside: avoid;
     break-inside: avoid;
+}
+
+.day-group {
+    -webkit-column-break-inside: avoid;
+    -moz-column-break-inside: avoid;
+    column-break-inside: avoid;
+    break-inside: avoid;
+}
+
+.legend-wrapper {
+    break-inside: avoid;
+    -webkit-column-break-inside: avoid;
+    -moz-column-break-inside: avoid;
 }
 
 .legend-title {
@@ -243,6 +281,13 @@ noscript {
     margin-left: 0.3em;
 }
 
+.legend-table th {
+    padding: 2px 8px 2px 0;
+    font-weight: 600;
+    text-align: left;
+    vertical-align: middle;
+}
+
 .legend-table td {
     padding: 2px 8px 2px 0;
     vertical-align: middle;
@@ -255,6 +300,15 @@ noscript {
 
 .legend-group:first-of-type .legend-table td:first-child {
     color: var(--accent-color);
+}
+
+.legend-table a {
+    color: inherit;
+    text-decoration: none;
+}
+
+.legend-table a:hover {
+    text-decoration: underline;
 }
 
 .legend-footer {
@@ -278,6 +332,27 @@ noscript {
 
 .qr-codes-row > div {
     flex: 0 0 auto;
+}
+
+.room-plans-row {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1em;
+    margin-top: 0.5em;
+}
+
+.room-plans-row > div {
+    flex: 0 0 auto;
+}
+
+.room-plan-svg {
+    display: block;
+    height: 700px;
+    width: auto;
+    max-width: 100%;
+    object-fit: contain;
+    background: transparent;
 }
 
 .qr-code-placeholder {
@@ -307,17 +382,15 @@ noscript {
     column-fill: balance; /* Firefox ignores auto; balance is default */
 }
 
-.no-data {
-    padding: 16px;
-    font-size: 16px;
-    font-style: italic;
-    color: #333;
-}
-
+.no-data,
 .loading {
     padding: 16px;
     font-size: 16px;
     color: #333;
+}
+
+.no-data {
+    font-style: italic;
 }
 
 .departure-row.break-row {
@@ -331,7 +404,7 @@ noscript {
 
 .departure-row {
     display: grid;
-    grid-template-columns: 56px 85px 1.4fr 50px;
+    grid-template-columns: var(--grid-cols-content);
     column-gap: 6px;
     padding: 0;
     border-bottom: 1px solid #000;

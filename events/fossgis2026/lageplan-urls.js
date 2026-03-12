@@ -1,0 +1,21 @@
+// Generiert von scripts/generate_lageplan_mapping_fossgis2026.py – nicht von Hand bearbeiten.
+const lageplanUrlByRoom = {
+    "HS1": "https://lageplan.uni-goettingen.de/?ident=5257_1_1.OG_1.151",
+    "HS2": "https://lageplan.uni-goettingen.de/?ident=5257_1_1.OG_1.153",
+    "HS3": "https://lageplan.uni-goettingen.de/?ident=5257_1_1.OG_1.152",
+    "HS4": "https://lageplan.uni-goettingen.de/?ident=5257_1_1.OG_1.150",
+    "BoF1": "https://lageplan.uni-goettingen.de/?ident=5257_1_EG_0.161",
+    "BoF2": "https://lageplan.uni-goettingen.de/?ident=5257_1_EG_0.155",
+    "BoF3": "https://lageplan.uni-goettingen.de/?ident=5257_1_EG_0.154",
+    "WS1": "https://lageplan.uni-goettingen.de/?ident=5361_1_1.OG_1.104",
+    "WS2": "https://lageplan.uni-goettingen.de/?ident=5361_1_1.OG_1.103",
+    "WS3": "https://lageplan.uni-goettingen.de/?ident=5361_1_1.OG_1.102",
+    "WS4": "https://lageplan.uni-goettingen.de/?ident=5361_1_1.OG_1.105",
+    "OSM1": "https://lageplan.uni-goettingen.de/?ident=2410_1_EG_0.161",
+    "OSM2": "https://lageplan.uni-goettingen.de/?ident=2410_1_EG_0.162",
+    "OSM3": "https://lageplan.uni-goettingen.de/?ident=2410_1_EG_0.163",
+    "OO": "https://lageplan.uni-goettingen.de/?ident=2409_1_EG_0.102",
+    "Post": "https://lageplan.uni-goettingen.de/?ident=5257_1_EG_0.103",
+    "Foyer": "https://lageplan.uni-goettingen.de/?ident=5257_1_EG_0.103",
+    "Mensa": "https://lageplan.uni-goettingen.de/?ident=5236_1_2.OG_2.140",
+};
