@@ -53,6 +53,13 @@ BUILDINGS_LAYER_URL = (
     "Lageplan_publish/Raeume_Gebaeude/FeatureServer/0/query"
 )
 
+# Etage -> Hoehe in Meter (fuer 3D-Ansicht in QGIS)
+ETAGE_TO_HEIGHT_M = {"EG": 0, "1.OG": 3, "2.OG": 6}
+
+# Gebaeude-PIZ -> schematische Hoehe in Meter (fuer 3D-Extrusion)
+# 5257=ZHG, 5361=VG, 2410/2409=Geographie, 5236=Mensa
+BUILDING_HEIGHT_M = {"5257": 12, "5361": 10, "2410": 10, "2409": 10, "5236": 10}
+
 
 def url_ident(url: str) -> str | None:
     """Extrahiert den ident-Parameter aus einer Lageplan-URL."""
@@ -139,6 +146,7 @@ def main():
                     "raumart": props.get("raumart"),
                     "raumnr": props.get("raumnr"),
                     "etage": props.get("etage"),
+                    "height_m": ETAGE_TO_HEIGHT_M.get(props.get("etage"), 0),
                     "gebid": props.get("gebid"),
                     "fossgis_room": room,
                     "fossgis_event": "fossgis2026",
@@ -172,6 +180,7 @@ def main():
                 "name": props.get("geb_bez"),
                 "piz": props.get("piz"),
                 "adresse": props.get("adresse"),
+                "height_m": BUILDING_HEIGHT_M.get(piz, 10),
                 "fossgis_event": "fossgis2026",
             },
         })
