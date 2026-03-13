@@ -6,10 +6,11 @@ Alle per URL eingebundenen oder referenzierten Ressourcen in `index.html` und `s
 
 ## Eingebundene Ressourcen (werden geladen)
 
-### Scripts
-| Beschreibung | URL |
-|--------------|-----|
-| Lucide Icons (UMD) | `https://unpkg.com/lucide@latest/dist/umd/lucide.js` |
+### Scripts (lokal)
+| Beschreibung | Pfad |
+|--------------|------|
+| Lucide Icons (UMD) | `../../assets/lucide.js` |
+| Lageplan-URL-Mapping (generiert) | `lageplan-urls.js` |
 
 ### Bilder / CSS-Hintergründe (lokal)
 | Beschreibung | Pfad |
@@ -42,12 +43,16 @@ Alle per URL eingebundenen oder referenzierten Ressourcen in `index.html` und `s
 | FOSSGIS Mastodon | `https://mastodon.online/@FOSSGISeV` |
 | Repo fossgis-fahrplan-druck | `https://github.com/gislars/fossgis-fahrplan-druck` |
 | Repo c3-fahrplan-druck (Original) | `https://github.com/felixdivo/c3-fahrplan-druck` |
+| Lageplan Uni Göttingen (pro Raum aus Legende) | `https://lageplan.uni-goettingen.de/?q=...` bzw. `?ident=...` |
 
 ---
 
 ## Lokale Ressourcen (relative Pfade, keine externen URLs)
 
 - `style.css` (Stylesheet)
+- `../../assets/lucide.js` (Lucide Icons, UMD-Build im Repo)
+- `lageplan-urls.js` (von `scripts/generate_lageplan_mapping_fossgis2026.py` erzeugt)
+- `rooms.geojson` (GeoJSON mit Raumgeometrien; von `scripts/generate_fossgis2026_rooms_geojson.py` aus dem Uni-Lageplan-API erzeugt)
 - `assets/qr-*.png` (QR-Code-Bilder: bahnhof.de, pretalx, Fahrplan-Druck, FOSSGIS Mastodon)
 - `fonts/*` (Schriftdateien in style.css)
 

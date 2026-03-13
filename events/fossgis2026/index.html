@@ -60,7 +60,8 @@
         </div>
     </div>
 
-        <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+        <script src="../../assets/lucide.js"></script>
+        <script src="lageplan-urls.js"></script>
         <script>
             (async () => {
                 // Event-specific configuration
@@ -83,6 +84,11 @@
                     null: 'NAT',
                     undefined: 'NAT',
                 };
+                // Legende aus trackMap, Kürzel alphabetisch
+                const trackLegendRows = Object.entries(trackMap)
+                    .filter(([name]) => name != null)
+                    .map(([name, code]) => [code, name])
+                    .sort((a, b) => a[0].localeCompare(b[0]));
                 const totalDays = 4;
                 const headerDateRange = '24.03.2026 – 28.03.2026';
                 const stationName = 'FOSSGIS Konferenz 2026';
@@ -102,14 +108,30 @@
                 // Rooms that should be displayed in accent color
                 const redRoomsList = ['HS1','HS2','HS3','HS4'];
 
-                // Erster Konferenztag (Jahr, Monat 1–12, Tag) – Video-Links ab dem zweiten Tag
-                const conferenceStartDate = new Date(2026, 2, 24); // 24.03.2026
-                const recordingsAvailableFrom = new Date(conferenceStartDate);
-                recordingsAvailableFrom.setDate(recordingsAvailableFrom.getDate() + 1);
+                // Streaming-URL pro Raum (Livestream am Konferenztag); genaue URLs bei Bekanntwerden ergänzen
+                const streamingUrlByRoom = {
+                    'HS1': 'https://streaming.media.ccc.de/fossgis2026/hs1',
+                    'HS2': 'https://streaming.media.ccc.de/fossgis2026/hs2',
+                    'HS3': 'https://streaming.media.ccc.de/fossgis2026/hs3',
+                    'HS4': 'https://streaming.media.ccc.de/fossgis2026/hs4',
+                    'BoF1': '',
+                    'BoF2': '',
+                    'BoF3': '',
+                    'WS1': '',
+                    'WS2': '',
+                    'WS3': '',
+                    'WS4': '',
+                    'OSM1': '',
+                    'OSM2': '',
+                    'OSM3': '',
+                    'OO': '',
+                    'Post': ''
+                };
+
                 const today = new Date();
+                // for testing: set date to event date, hint: month are 0 based in JavaScript
+                // today = new Date(2026, 2, 25);
                 today.setHours(0, 0, 0, 0);
-                recordingsAvailableFrom.setHours(0, 0, 0, 0);
-                const recordingsAvailable = today >= recordingsAvailableFrom;
 
                 // URL parameter parsing
                 const params = new URLSearchParams(location.search);
@@ -117,7 +139,11 @@
                 const onlyTrackParam = params.get('only-track');
                 const onlyRoomParam = params.get('only-room');
                 const tintedBackgroundParam = params.get('tinted-background');
-                const columnsRaw = params.get('columns') ?? '4';
+                let columnsRaw = params.get('columns');
+                if (columnsRaw == null) {
+                    columnsRaw = window.matchMedia('(max-width: 768px)').matches ? 'mobile' : '4';
+                }
+                const usedViewportFallback = params.get('columns') === null && columnsRaw === 'mobile';
                 const isSingleDay = onlyDayParam !== null;
                 const selectedDay = parseInt(onlyDayParam ?? '1', 10);
 
@@ -129,10 +155,34 @@
                 document.documentElement.style.setProperty('--page-width', isMobileColumns ? '100vw' : `${(841 / 4) * columns}mm`);
                 document.body.classList.toggle('mobile-columns', isMobileColumns);
 
+                if (usedViewportFallback) {
+                    const url = new URL(location.href);
+                    url.searchParams.set('columns', 'mobile');
+                    history.replaceState(null, '', url.toString());
+                }
+
                 // Optional: gelben Hintergrund (RAL 1003) ausschalten, z. B. für Druck auf gelbem Papier
                 if (tintedBackgroundParam === 'false') {
                     document.body.classList.remove('tinted-background');
                 }
+
+                // URL-Helfer für Filter-Links und Reset (kombinierbare Filter, Toggle per zweiter Klick)
+                const buildResetUrl = () => {
+                    const url = new URL(location.href);
+                    url.search = '';
+                    return url.pathname;
+                };
+                const buildFilterToggleUrl = (paramKey, paramValue) => {
+                    const url = new URL(location.href);
+                    const current = url.searchParams.get(paramKey);
+                    if (current === String(paramValue)) {
+                        url.searchParams.delete(paramKey);
+                    } else {
+                        url.searchParams.set(paramKey, paramValue);
+                    }
+                    return url.search ? url.pathname + '?' + url.searchParams.toString() : url.pathname;
+                };
+                const escapeHtml = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
                 // DOM hooks
                 const headerLeft = document.querySelector('.header-left');
@@ -149,11 +199,7 @@
                     columnHeadersWrapper.appendChild(columnHeadersTemplate.content.cloneNode(true));
                 }
 
-                // Apply header labels
                 if (headerLeft && headerDateRange) headerLeft.textContent = headerDateRange;
-                if (stationNameEl && stationName) stationNameEl.textContent = stationName;
-
-                // Build active filter label text
                 const filterLabelParts = [];
                 if (onlyRoomParam) filterLabelParts.push(onlyRoomParam);
                 const trackDisplay = (() => {
@@ -166,11 +212,11 @@
                     return onlyTrackParam;
                 })();
                 if (trackDisplay) filterLabelParts.push(trackDisplay);
-                if (stationNameEl && filterLabelParts.length) {
-                    stationNameEl.textContent = `${stationName} — ${filterLabelParts.join(' — ')}`;
+                if (stationNameEl && stationName) {
+                    const titleText = filterLabelParts.length ? `${stationName} — ${filterLabelParts.join(' — ')}` : stationName;
+                    stationNameEl.innerHTML = `<a href="${buildResetUrl()}" title="Alle Filter zurücksetzen">${escapeHtml(titleText)}</a>`;
                 }
 
-                // Filter predicate
                 const passesFilters = (talk, roomName) => {
                     if (onlyTrackParam) {
                         const target = onlyTrackParam.toLowerCase();
@@ -218,8 +264,12 @@
 
                 const toMinutes = (hhmm) => parseInt(hhmm.slice(0, 2), 10) * 60 + parseInt(hhmm.slice(-2), 10);
                 const toHours = (mins) => `${String(Math.floor(mins / 60) % 24).padStart(2, '0')}:${String(mins % 60).padStart(2, '0')}`;
+                const timeForSort = (hhmm) => {
+                    if (!hhmm || typeof hhmm !== 'string') return 9999;
+                    const mins = toMinutes(hhmm);
+                    return isNaN(mins) ? 9999 : (mins < 360 ? mins + (24 * 60) : mins);
+                };
 
-                // Convert ISO datetime to HH:MM format
                 const isoToHHMM = (isoString) => {
                     if (!isoString) return '';
                     const date = new Date(isoString);
@@ -228,12 +278,19 @@
                     return `${hours}:${minutes}`;
                 };
 
-                // Check if title contains additional information (e.g., "Kaffeepause + Gruppenfoto")
+                const weekdayFromIso = (iso) => {
+                    if (!iso) return '';
+                    const [y, m, d] = iso.split('-').map(Number);
+                    if (!y || !m || !d) return '';
+                    const date = new Date(y, m - 1, d);
+                    if (isNaN(date.getTime())) return '';
+                    return new Intl.DateTimeFormat('de-DE', { weekday: 'long' }).format(date);
+                };
+
                 const hasAdditionalInfo = (title) => {
                     return /\+|und|&/i.test(title);
                 };
 
-                // Determine if a break should be replaced by a new one
                 const shouldReplaceBreak = (existing, newTitle) => {
                     const existingHasInfo = hasAdditionalInfo(existing.breakTitle);
                     const newHasInfo = hasAdditionalInfo(newTitle);
@@ -241,12 +298,9 @@
                            (newHasInfo === existingHasInfo && newTitle.length > existing.breakTitle.length);
                 };
 
-                // Extract breaks from widget JSON and convert to standard format
                 // Groups breaks by start time and title to avoid duplicates
                 const extractBreaks = (widgetData, conferenceDays) => {
                     if (!widgetData || !widgetData.talks) return [];
-                    
-                    // Use a Map to group breaks by start time and title
                     const breakMap = new Map();
                     
                     widgetData.talks.forEach((talk) => {
@@ -260,8 +314,7 @@
                             }
                             
                             if (!title) return;
-                            
-                            // Calculate duration
+
                             const startDate = new Date(talk.start);
                             const endDate = new Date(talk.end);
                             const durationMs = endDate - startDate;
@@ -269,13 +322,16 @@
                             const durationHH = String(Math.floor(durationMins / 60)).padStart(2, '0');
                             const durationMM = String(durationMins % 60).padStart(2, '0');
                             const duration = `${durationHH}:${durationMM}`;
-                            
-                            // Find which day this break belongs to
+
                             let dayIndex = null;
+                            let dayDate = null;
                             const breakDate = startDate.toISOString().split('T')[0];
                             if (conferenceDays) {
                                 const day = conferenceDays.find(d => d.date === breakDate);
-                                if (day) dayIndex = day.index;
+                                if (day) {
+                                    dayIndex = day.index;
+                                    dayDate = day.date;
+                                }
                             }
                             
                             // Create a unique key for this break (only start time, not title)
@@ -298,14 +354,12 @@
                                     duration: duration,
                                     roomName: breakRoomName, // Generic room name for breaks
                                     dayIndex: dayIndex,
+                                    dayDate: dayDate,
                                     isBreak: true,
                                     breakTitle: title
                                 });
                             } else {
-                                // If break already exists, prefer the title with more information
                                 const existing = breakMap.get(breakKey);
-                                
-                                // Replace if new title has more info, or if it's longer (more descriptive)
                                 if (shouldReplaceBreak(existing, title)) {
                                     breakMap.set(breakKey, {
                                         id: uniqueId,
@@ -314,6 +368,7 @@
                                         duration: duration,
                                         roomName: breakRoomName,
                                         dayIndex: dayIndex,
+                                        dayDate: dayDate,
                                         isBreak: true,
                                         breakTitle: title
                                     });
@@ -321,8 +376,6 @@
                             }
                         }
                     });
-                    
-                    // Convert Map values to array
                     return Array.from(breakMap.values());
                 };
 
@@ -345,11 +398,18 @@
                     if (roomName.startsWith('OSM3')) return 'OSM3';
                     if (roomName.includes('Opening OSM')) return 'OO';
                     if (roomName.toLowerCase().includes('posterausstellung')) return 'Post';
-                    
+                    if (roomName.includes('Foyer MH') || roomName.toLowerCase().includes('community sprint')) return 'Foyer';
+                    if (roomName === 'Mensa') return 'Mensa';
                     return '*';
                 };
 
-                // Version string formatting for legend footer
+                const getRoomLegendDisplayName = (roomName, description) => {
+                    const inParens = (roomName || '').match(/\(([^)]+)\)/);
+                    if (inParens) return inParens[1].trim();
+                    if (description && String(description).trim()) return description.trim();
+                    return roomName || '';
+                };
+
                 const formatVersion = (dataVersion) => {
                     let formattedVersion = dataVersion || 'unknown';
                     const dateMatch = formattedVersion.match(/(\d{4})-(\d{2})-(\d{2})[ T](\d{2}:\d{2}(?::\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:?\d{2})?)?)/);
@@ -379,7 +439,6 @@
                     { pattern: /(frühstück|fruehstueck|kaffe)/i, icon: 'coffee' }
                 ];
 
-                // Get break icon based on title
                 const getBreakIcon = (title) => {
                     const titleLower = (title || '').toLowerCase();
                     for (const { pattern, icon } of breakIconMap) {
@@ -390,7 +449,6 @@
                     return '<i data-lucide="coffee"></i>'; // Default fallback
                 };
 
-                // Determine event type and return track code and flags
                 const determineEventType = (row, duration, trackCode) => {
                     const result = {
                         trackCode: trackCode,
@@ -430,7 +488,6 @@
                     return result;
                 };
 
-                // Render one schedule row
                 const renderRow = (row, trackCodeOverride = null) => {
                     // Special rendering for breaks
                     if (row.isBreak) {
@@ -443,40 +500,53 @@
 
                     let trackCode = trackCodeOverride || trackMap[row.track] || 'NAT';
                     if (row.roomName.startsWith('Kidspace')) trackCode = 'KID';
-                    
-                    // Determine event type
+
                     const eventType = determineEventType(row, duration, trackCode);
                     trackCode = eventType.trackCode;
-                    
-                    // Check if this is a Sektempfang
                     const isSektempfang = row.title && (row.title.toLowerCase().includes('sektempfang') || row.title.toLowerCase().includes('sekt'));
 
-                    // Video-Icon: vor 2. Konferenztag nur Icon, ab 2. Tag Link zu media.ccc.de
-                    const recordingUrl = (row.do_not_record === false && row.slug) ? `https://media.ccc.de/v/${row.slug}` : '';
-                    const recordingIcon = (row.do_not_record === false)
-                        ? (recordingsAvailable && recordingUrl
-                            ? `<a class="no-video-icon" href="${recordingUrl}" target="_blank" rel="noopener" title="Aufzeichnung"><i data-lucide="video"></i></a>`
-                            : '<div class="no-video-icon"><i data-lucide="video"></i></div>')
-                        : (row.do_not_record === true)
-                            ? '<div class="no-video-icon"><i data-lucide="video-off"></i></div>'
-                            : '';
-                    
-                    // Lightning talk icon
+                    const roomAbbrev = abbreviateRoom(row.roomName);
+                    // Tag-Klassifikation für Video-Links: vergangen → Aufzeichnung, heute → Livestream, zukünftig → nur Icon
+                    let isPastDay = false;
+                    let isToday = false;
+                    let isFutureDay = false;
+                    if (row.dayDate) {
+                        const [y, m, d] = row.dayDate.split('-').map(Number);
+                        const talkDay = new Date(y, m - 1, d);
+                        talkDay.setHours(0, 0, 0, 0);
+                        if (talkDay.getTime() < today.getTime()) isPastDay = true;
+                        else if (talkDay.getTime() === today.getTime()) isToday = true;
+                        else isFutureDay = true;
+                    }
+                    // Video-Icon: heute → Link Livestream (Raum-URL), vergangen → Link Aufzeichnung, zukünftig → nur Icon
+                    let recordingIcon = '';
+                    if (row.do_not_record === true) {
+                        recordingIcon = '<div class="no-video-icon"><i data-lucide="video-off"></i></div>';
+                    } else if (row.do_not_record === false) {
+                        const videoIconHtml = '<i data-lucide="video"></i>';
+                        if (isFutureDay) {
+                            recordingIcon = `<div class="no-video-icon">${videoIconHtml}</div>`;
+                        } else if (isToday) {
+                            const streamUrl = streamingUrlByRoom[roomAbbrev];
+                            recordingIcon = streamUrl
+                                ? `<a class="no-video-icon" href="${streamUrl}" target="_blank" rel="noopener" title="Livestream"><i data-lucide="video"></i></a>`
+                                : `<div class="no-video-icon">${videoIconHtml}</div>`;
+                        } else if (isPastDay) {
+                            const recordingUrl = row.slug ? `https://media.ccc.de/v/${row.slug}` : '';
+                            recordingIcon = recordingUrl
+                                ? `<a class="no-video-icon" href="${recordingUrl}" target="_blank" rel="noopener" title="Aufzeichnung"><i data-lucide="video"></i></a>`
+                                : `<div class="no-video-icon">${videoIconHtml}</div>`;
+                        } else {
+                            recordingIcon = `<div class="no-video-icon">${videoIconHtml}</div>`;
+                        }
+                    }
+
                     const lightningIcon = eventType.isLightningTalk ? '&#8239;<i data-lucide="zap"></i>' : '';
-                    
-                    // Mitgliederversammlung icon
                     const mvIcon = eventType.isMitgliederversammlung ? '&#8239;<i data-lucide="users"></i>' : '';
-                    
-                    // Sektempfang icon
                     const sektempfangIcon = isSektempfang ? '&#8239;<i data-lucide="wine"></i>' : '';
-                    
-                    // Workshop icon
                     const workshopIcon = eventType.isWorkshop ? '&#8239;<i data-lucide="wrench"></i>' : '';
-                    
-                    // Posterausstellung icon
                     const posterausstellungIcon = eventType.isPosterausstellung ? '&#8239;<i data-lucide="layout-grid"></i>' : '';
 
-                    const roomAbbrev = abbreviateRoom(row.roomName);
                     const trainClass = redRoomsList.includes(roomAbbrev) ? ' train-number-red' : '';
                     const trainId = row.id.toString().substring(0, 5);
                     const longNumClass = trainId.length > 2 ? ' train-num-long' : '';
@@ -498,7 +568,6 @@
             </div>`;
                 };
 
-                // Render break/pause row
                 const renderBreakRow = (row) => {
                     const duration = toMinutes(row.duration);
                     const roomAbbrev = abbreviateRoom(row.roomName);
@@ -511,11 +580,7 @@
                         : row.id.toString().substring(0, 5);
                     const longNumClass = trainId.length > 2 ? ' train-num-long' : '';
                     const roomNameDisplay = roomAbbrev.includes('*') ? ` <span class="room-name">* ${row.roomName}</span>` : '';
-                    
-                    // Get break icon based on title
                     const breakIcon = getBreakIcon(row.breakTitle);
-                    
-                    // Check if break includes "Gruppenfoto" to show camera icon
                     const breakTitleLower = (row.breakTitle || '').toLowerCase();
                     const hasGroupPhoto = breakTitleLower.includes('gruppenfoto');
                     const cameraIcon = hasGroupPhoto ? '&#8239;<i data-lucide="camera"></i>' : '';
@@ -548,8 +613,9 @@
                     return null;
                 };
 
-                // Legend HTML
-                const renderLegend = (formattedVersion, footerText) => `
+                // Legend HTML (trackRowsHtml und roomRowsHtml werden an den Aufrufstellen aus data/buildFilterToggleUrl erzeugt)
+                const renderLegend = (formattedVersion, footerText, trackRowsHtml, roomRowsHtml) => `
+        <div class="legend-wrapper">
         <div class="time-range legend-title">
                 <div style="grid-column: 2 / -1; text-align: left;">Zeichenerklärung/Explanations/Legende</div>
         </div>
@@ -557,20 +623,17 @@
                 <div class="legend-group">
                         <h4>Events im Hauptverkehr/Main stage events/trains grandes lignes</h4>
                         <table class="legend-table">
-                                <tr><td>OSG</td><td>Grundlagen Open-Source-GIS und OpenStreetMap</td></tr>
-                                <tr><td>NEW</td><td>Neuigkeiten und Interessantes aus den Open-Source-Projekten</td></tr>
-                                <tr><td>OSM</td><td>OpenStreetMap</td></tr>
-                                <tr><td>PRA</td><td>Praxisberichte</td></tr>
-                                <tr><td>DDD</td><td>Daten, Datenbanken und Datenprozessierung</td></tr>
-                                <tr><td>RUM</td><td>Routing und Mobilität</td></tr>
-                                <tr><td>RZM</td><td>Raum-zeitliche Analysen und Modelle</td></tr>
-                                <tr><td>RAS</td><td>Rasterdaten und Fernerkundung</td></tr>
-                                <tr><td>3D </td><td>3D, Drohnen, LIDAR, Geo-AR/VR</td></tr>
-                                <tr><td>KUV</td><td>Kartographie und Visualisierung</td></tr>
-                                <tr><td>STA</td><td>Offene Standards, z.B. INSPIRE, OGC</td></tr>
-                                <tr><td>GDM</td><td>Geodatenmanagement</td></tr>
-                                <tr><td>LIZ</td><td>Open Data, Datenschutz und Lizenzen</td></tr>
-                                <tr><td>EDU</td><td>Ausbildung, Lehre, Open Science</td></tr>
+                                ${trackRowsHtml}
+                        </table>
+                </div>
+
+                <div style="height: 1em;"></div>
+
+                <div class="legend-group">
+                        <h4>Halte / Stops / Arrêts</h4>
+                        <table class="legend-table">
+                                <thead><tr><th>Filter</th><th>Sitzplatzsuche</th></tr></thead>
+                                <tbody>${roomRowsHtml}</tbody>
                         </table>
                 </div>
 
@@ -603,7 +666,6 @@
                                 <tr><td><i data-lucide="users"></i></td><td>Mitgliederversammlung, Stimmrecht mitbringen</td></tr>
                                 <tr><td><i data-lucide="zap"></i></td><td>Lightning Talk, schnell einsteigen</td></tr>
                         </table>
-                        <p class="legend-note" style="margin-top: 0.75em; font-size: 0.95em;">Die Posterausstellung findet am Donnerstag, insbesondere in den Pausen im Foyer statt. Die Poster hängen von Mittwoch 12 Uhr bis Freitagnachmittag.</p>
                 </div>
 
                 <div style="height: 1em;"></div>
@@ -637,41 +699,47 @@
 
                         ${footerText}
                 </div>
+        </div>
         </div>`;
+
+                const buildLegendFilterHtml = (data) => {
+                    const trackRowsHtml = trackLegendRows.map(([code, desc]) => `<tr><td><a href="${buildFilterToggleUrl('only-track', code)}">${escapeHtml(code)}</a></td><td>${escapeHtml(desc)}</td></tr>`).join('');
+                    const usedRoomNames = new Set(data.schedule.conference.days.flatMap((d) => Object.keys(d.rooms || {})));
+                    let roomList = (data.schedule.conference.rooms || []).filter((r) => usedRoomNames.has(r.name));
+                    roomList = roomList.concat([{ name: 'Mensa', description: 'Mensa (Mittagspause)' }]);
+                    roomList.sort((a, b) => a.name.localeCompare(b.name));
+                    const roomRowsHtml = roomList.map((room) => {
+                        const abbrev = abbreviateRoom(room.name);
+                        const paramValue = abbrev !== '*' ? abbrev : room.name;
+                        const displayCol2 = getRoomLegendDisplayName(room.name, room.description);
+                        const lageplanUrl = (typeof lageplanUrlByRoom !== 'undefined' && lageplanUrlByRoom[abbrev]) ? lageplanUrlByRoom[abbrev] : '';
+                        const col2Html = lageplanUrl ? `<a href="${escapeHtml(lageplanUrl)}" target="_blank" rel="noopener">${escapeHtml(displayCol2)}</a>` : escapeHtml(displayCol2);
+                        return `<tr><td><a href="${buildFilterToggleUrl('only-room', paramValue)}">${escapeHtml(abbrev)}</a></td><td>${col2Html}</td></tr>`;
+                    }).join('');
+                    return { trackRowsHtml, roomRowsHtml };
+                };
 
                 const formattedVersion = formatVersion(data.schedule.version || 'unknown');
 
-                // Multi-day view
-                if (!isSingleDay) {
-                    // Multi-day rendering (original behavior)
+                const collectAndSortTalks = (days, conferenceDays, widgetData, selectedDay) => {
                     const allTalks = [];
-                    data.schedule.conference.days.forEach((day) => {
-                        Object.entries(day.rooms).forEach(([roomName, talks]) => {
+                    days.forEach((day) => {
+                        Object.entries(day.rooms || {}).forEach(([roomName, talks]) => {
                             talks.forEach((talk) => {
                                 if (!passesFilters(talk, roomName)) return;
-                                allTalks.push({ ...talk, dayIndex: day.index, roomName });
+                                allTalks.push({ ...talk, dayIndex: day.index, dayDate: day.date, roomName });
                             });
                         });
                     });
-
-                    // Add breaks from widget JSON
                     if (widgetData) {
-                        const breaks = extractBreaks(widgetData, data.schedule.conference.days);
+                        const breaks = extractBreaks(widgetData, conferenceDays);
                         breaks.forEach((breakEvent) => {
-                            if (passesFilters(breakEvent, breakEvent.roomName)) {
-                                allTalks.push(breakEvent);
-                            }
+                            if (selectedDay !== null && breakEvent.dayIndex !== selectedDay) return;
+                            if (!passesFilters(breakEvent, breakEvent.roomName)) return;
+                            allTalks.push(breakEvent);
                         });
                     }
-
-                    // Sort by day, time, room; move <06:00 to end of each day
-                    const timeForSort = (hhmm) => {
-                        if (!hhmm || typeof hhmm !== 'string') return 9999; // Put invalid times at end
-                        const mins = toMinutes(hhmm);
-                        return isNaN(mins) ? 9999 : (mins < 360 ? mins + (24 * 60) : mins);
-                    };
                     allTalks.sort((a, b) => {
-                        // Handle null/undefined dayIndex
                         const aDay = a.dayIndex ?? 999;
                         const bDay = b.dayIndex ?? 999;
                         if (aDay !== bDay) return aDay - bDay;
@@ -682,98 +750,90 @@
                         const bRoom = String(b.roomName || '');
                         return aRoom.localeCompare(bRoom);
                     });
+                    return allTalks;
+                };
+
+                // Multi-day view
+                if (!isSingleDay) {
+                    const allTalks = collectAndSortTalks(data.schedule.conference.days, data.schedule.conference.days, widgetData, null);
+                    const talksByDay = new Map();
+                    allTalks.forEach((row) => {
+                        if (!talksByDay.has(row.dayIndex)) talksByDay.set(row.dayIndex, []);
+                        talksByDay.get(row.dayIndex).push(row);
+                    });
 
                     departureTableContent.innerHTML = '';
-                    let currentDay = null;
-                    allTalks.forEach((row) => {
-                        if (currentDay !== row.dayIndex) {
-                            currentDay = row.dayIndex;
-                            const dayHTML = `
+                    [...talksByDay.keys()].sort((a, b) => a - b).forEach((dayIndex) => {
+                        const dayRows = talksByDay.get(dayIndex);
+                        const weekday = weekdayFromIso(dayRows[0].dayDate);
+                        const dayLabel = weekday ? `Tag ${dayIndex} (${weekday})` : `Tag ${dayIndex}`;
+                        const dayHeaderHTML = `
                         <div class="time-range">
                                 <div></div>
                                 <div></div>
-                                <div>Tag ${row.dayIndex}</div>
+                                <div><a href="${buildFilterToggleUrl('only-day', dayIndex)}">${dayLabel}</a></div>
                                 <div></div>
                         </div>`;
-                            departureTableContent.insertAdjacentHTML('beforeend', dayHTML);
+                        const firstRowHTML = renderRow(dayRows[0]);
+                        departureTableContent.insertAdjacentHTML('beforeend', `<div class="day-group">${dayHeaderHTML}${firstRowHTML}</div>`);
+                        for (let i = 1; i < dayRows.length; i += 1) {
+                            departureTableContent.insertAdjacentHTML('beforeend', renderRow(dayRows[i]));
                         }
-
-                        departureTableContent.insertAdjacentHTML('beforeend', renderRow(row));
                     });
 
-                    // Legend footer text (original)
-                    const legend = renderLegend(formattedVersion, `Dieser Fahrplan ist bis Tag ${totalDays} (16:00) Eigentum der FOSSGIS-Konferenz. Danach geht er in die chaotische Selbstverwaltung über und darf legal entwendet werden.`);
+                    const { trackRowsHtml, roomRowsHtml } = buildLegendFilterHtml(data);
+                    const legend = renderLegend(formattedVersion, `Dieser Fahrplan ist bis Tag ${totalDays} (16:00) Eigentum der FOSSGIS-Konferenz. Danach geht er in die chaotische Selbstverwaltung über und darf legal entwendet werden.`, trackRowsHtml, roomRowsHtml);
                     departureTableContent.insertAdjacentHTML('beforeend', legend);
                 } else {
                     // Single-day view
-                    // Single-day rendering
                     const dayObj = data?.schedule?.conference?.days?.find((d) => d.index === selectedDay);
                     if (!dayObj) {
                         showError(`Keine Inhalte für Tag ${selectedDay} gefunden. Versuchen Sie z.B. ?only-day=0 oder ?only-day=2 in der URL.`);
                         return;
                     }
 
-                    const dayTalks = [];
-                    Object.entries(dayObj.rooms || {}).forEach(([roomName, talks]) => {
-                        talks.forEach((talk) => {
-                            if (!passesFilters(talk, roomName)) return;
-                            dayTalks.push({ ...talk, dayIndex: dayObj.index, roomName });
-                        });
-                    });
-
-                    // Add breaks from widget JSON for this day
-                    if (widgetData) {
-                        const breaks = extractBreaks(widgetData, data.schedule.conference.days);
-                        breaks.forEach((breakEvent) => {
-                            if (breakEvent.dayIndex === selectedDay && passesFilters(breakEvent, breakEvent.roomName)) {
-                                dayTalks.push(breakEvent);
-                            }
-                        });
-                    }
-
+                    const dayTalks = collectAndSortTalks([dayObj], data.schedule.conference.days, widgetData, selectedDay);
                     if (!dayTalks.length) {
                         showError(`Keine Inhalte für Tag ${selectedDay} gefunden. Versuchen Sie z.B. ?only-day=0 oder ?only-day=2 in der URL.`);
                         return;
                     }
 
-                    const timeForSort = (hhmm) => {
-                        if (!hhmm || typeof hhmm !== 'string') return 9999; // Put invalid times at end
-                        const mins = toMinutes(hhmm);
-                        return isNaN(mins) ? 9999 : (mins < 360 ? mins + (24 * 60) : mins);
-                    };
-                    dayTalks.sort((a, b) => {
-                        const aTime = timeForSort(a.start);
-                        const bTime = timeForSort(b.start);
-                        if (aTime !== bTime) return aTime - bTime;
-                        const aRoom = String(a.roomName || '');
-                        const bRoom = String(b.roomName || '');
-                        return aRoom.localeCompare(bRoom);
-                    });
-
-                    // Update header to show day/date
                     if (headerLeft) {
                         const [year, month, day] = (dayObj.date || '').split('-');
-                        headerLeft.textContent = `${day}.${month}.${year} — Tag ${selectedDay}`;
+                        const weekday = weekdayFromIso(dayObj.date);
+                        headerLeft.textContent = weekday
+                            ? `${day}.${month}.${year} — ${weekday} — Tag ${selectedDay}`
+                            : `${day}.${month}.${year} — Tag ${selectedDay}`;
                     }
 
-                    departureTableContent.innerHTML = '';
-                    let currentRange = null;
-                    dayTalks.forEach((row, idx) => {
+                    const slots = [];
+                    let currentLabel = null;
+                    let currentRows = null;
+                    dayTalks.forEach((row) => {
                         const rangeLabel = getTimeRangeLabel(row.start);
-                        if (rangeLabel && rangeLabel !== currentRange) {
-                            currentRange = rangeLabel;
-                            const headerHTML = `
+                        if (rangeLabel !== currentLabel) {
+                            currentLabel = rangeLabel;
+                            currentRows = [];
+                            slots.push({ label: rangeLabel, rows: currentRows });
+                        }
+                        currentRows.push(row);
+                    });
+
+                    departureTableContent.innerHTML = '';
+                    slots.forEach(({ label, rows }) => {
+                        const headerHTML = label
+                            ? `
                         <div class="time-range">
                             <div></div>
                             <div></div>
-                            <div>${rangeLabel}</div>
+                            <div>${label}</div>
                             <div></div>
-                        </div>`;
-                            departureTableContent.insertAdjacentHTML('beforeend', `<div class="time-range-group">${headerHTML}`);
-                            departureTableContent.insertAdjacentHTML('beforeend', renderRow(row));
-                            departureTableContent.insertAdjacentHTML('beforeend', '</div>');
-                        } else {
-                            departureTableContent.insertAdjacentHTML('beforeend', renderRow(row));
+                        </div>`
+                            : '';
+                        const firstRowHTML = renderRow(rows[0]);
+                        departureTableContent.insertAdjacentHTML('beforeend', `<div class="time-range-group">${headerHTML}${firstRowHTML}</div>`);
+                        for (let i = 1; i < rows.length; i += 1) {
+                            departureTableContent.insertAdjacentHTML('beforeend', renderRow(rows[i]));
                         }
                     });
 
@@ -781,7 +841,8 @@
                         ? 'Nimm mich beim Abbau mit.'
                         : `Nimm mich ab Tag ${selectedDay + 1} mit, aber lass das Klebeband da.`;
 
-                    const legend = renderLegend(formattedVersion, takeWithText);
+                    const { trackRowsHtml, roomRowsHtml } = buildLegendFilterHtml(data);
+                    const legend = renderLegend(formattedVersion, takeWithText, trackRowsHtml, roomRowsHtml);
                     departureTableContent.insertAdjacentHTML('beforeend', legend);
                 }
 
