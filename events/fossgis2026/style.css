@@ -39,24 +39,33 @@
 }
 
 @page {
-  margin: 10mm;
+  size: auto;
+  margin: 0;
 }
 
 @media print {
-  html, body {
-    width: 100%;
+  /* Gesamte bedruckbare Breite nutzen (A0/A1 je nach Dialog), nicht --page-width,
+   * damit weniger Spalten die volle Papierbreite ausfuellen. */
+  html {
+    width: 100% !important;
+    min-height: auto;
     height: auto;
-    overflow: visible;
-  }
-  /* ensure content scales and avoids page breaks */
-  body {
-    box-sizing: border-box;
     margin: 0 !important;
     padding: 0 !important;
-    width: 100% !important;
+    overflow: visible;
   }
-  :root {
-    --page-width: 100%;
+  body {
+    box-sizing: border-box;
+    min-height: auto;
+    height: auto;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: visible;
+    width: 100% !important;
+    max-width: none !important;
+  }
+  body.mobile-columns {
+    padding: 0 !important;
   }
   .no-break { page-break-inside: avoid; }
   

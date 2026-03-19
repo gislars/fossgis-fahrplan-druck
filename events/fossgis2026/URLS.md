@@ -26,10 +26,10 @@ Alle per URL eingebundenen oder referenzierten Ressourcen in `index.html` und `s
 ### Bilder (img src – QR-Codes, lokal)
 | Beschreibung | Pfad |
 |--------------|------|
-| QR-Code bahnhof.de | `assets/qr-bahnhof_de.png` |
-| QR-Code Online-Fahrplan (pretalx) | `assets/qr-fahrplan_pretalx_2026.png` |
-| QR-Code Fahrplan-Druck (online) | `assets/qr-fahrplan_druck_online_2026.png` |
-| QR-Code FOSSGIS Mastodon | `assets/qr-fossgis-mastodon.png` |
+| QR-Code bahnhof.de | `assets/qr-bahnhof_de.svg` |
+| QR-Code Online-Fahrplan (pretalx) | `assets/qr-fahrplan_pretalx_2026.svg` |
+| QR-Code Fahrplan-Druck (online) | `assets/qr-fahrplan_druck_online_2026.svg` |
+| QR-Code FOSSGIS Mastodon | `assets/qr-fossgis-mastodon.svg` |
 
 ---
 
@@ -53,7 +53,7 @@ Alle per URL eingebundenen oder referenzierten Ressourcen in `index.html` und `s
 - `../../assets/lucide.js` (Lucide Icons, UMD-Build im Repo)
 - `lageplan-urls.js` (von `scripts/generate_lageplan_mapping_fossgis2026.py` erzeugt)
 - `rooms.geojson` (GeoJSON mit Raumgeometrien; von `scripts/generate_fossgis2026_rooms_geojson.py` aus dem Uni-Lageplan-API erzeugt)
-- `assets/qr-*.png` (QR-Code-Bilder: bahnhof.de, pretalx, Fahrplan-Druck, FOSSGIS Mastodon)
+- `assets/qr-*.svg` (QR-Codes als SVG: bahnhof.de, pretalx, Fahrplan-Druck, FOSSGIS Mastodon)
 - `fonts/*` (Schriftdateien in style.css)
 
 ---

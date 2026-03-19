@@ -11,6 +11,7 @@ Verwendung (von Projektroot):
   python scripts/generate_qr_code.py --url "https://pretalx.com/fossgis2025/schedule/" --logo assets/FossgisKompassRGB_600dpi.png --out events/fossgis2025/assets/qr-fahrplan_pretalx_2025.png
 """
 import argparse
+import math
 import sys
 from pathlib import Path
 
@@ -18,14 +19,14 @@ import qrcode
 from qrcode.constants import ERROR_CORRECT_H
 from qrcode.image.styledpil import StyledPilImage
 from qrcode.image.styles.colormasks import SolidFillColorMask
-from qrcode.image.styles.moduledrawers.pil import CircleModuleDrawer, SquareModuleDrawer
+from qrcode.image.styles.moduledrawers.pil import CircleModuleDrawer
 
 try:
     from PIL import Image, ImageDraw, ImageFont, ImageColor
 except ImportError:
     raise SystemExit("Bitte installieren: pip install 'qrcode[pil]' Pillow")
 
-# Konfigurierbare Konstanten (PEP 8: UPPER_CASE für Modul-Konstanten)
+# Konfigurierbare Konstanten
 DEFAULT_FONT_SIZE = 14
 LOGO_SIZE_FRACTION = 4  # Logo-Höhe = Bildhöhe / LOGO_SIZE_FRACTION
 CAPTION_GAP_ABOVE = 0
@@ -101,12 +102,58 @@ def make_qr(
     img = qr.make_image(
         image_factory=StyledPilImage,
         module_drawer=CircleModuleDrawer(),
-        eye_drawer=SquareModuleDrawer(),
+        eye_drawer=CircleModuleDrawer(),
         color_mask=color_mask,
     )
     if hasattr(img, "_img"):
         img = img._img
     img = img.convert("RGBA")
+
+    # Finder-Marker als echte konzentrische Kreise (statt Punktmodule der Library).
+    # Die Library zeichnet die Augen als Kreise in den Zellen; eine Ellipse nur im
+    # einbeschriebenen Kreis lässt die Ecken des 7x7-Rasters frei (dort bleiben Punkte sichtbar).
+    # Daher: zuerst den 7x7-Bereich löschen, dann Kreise bis in die Ecken des Quadrats.
+    total_modules = qr.modules_count + (2 * border)
+    finder_origins = (
+        (border, border),
+        (total_modules - border - 7, border),
+        (border, total_modules - border - 7),
+    )
+    draw = ImageDraw.Draw(img)
+    fill_outer = (0, 0, 0, 255)
+    fill_middle = (*back_rgb_for_mask, 255)
+    fill_inner = (0, 0, 0, 255)
+    wipe_fill = (
+        (*magic_back_rgb, 255) if is_transparent_bg else (*rgb_back, 255)
+    )
+    sqrt2 = math.sqrt(2.0)
+    for mx, my in finder_origins:
+        x0 = mx * box_size
+        y0 = my * box_size
+        x7 = x0 + (7 * box_size)
+        y7 = y0 + (7 * box_size)
+        cx = x0 + 3.5 * box_size
+        cy = y0 + 3.5 * box_size
+        # Kompletten Finder-Block übermalen (inkl. Ecken).
+        draw.rectangle((x0, y0, x7 - 1, y7 - 1), fill=wipe_fill)
+        # Außen: Umkreis des 7x7-Modulquadrats (erreicht die Eckzellen).
+        r_outer = 3.5 * box_size * sqrt2
+        # Mittlerer Ring: Hintergrundfarbe; bei transparent Magic-Farbe, später transparent.
+        r_mid = 2.5 * box_size * sqrt2
+        # Zentrum: einbeschriebener Kreis des 3x3-Blocks.
+        r_inner = 1.5 * box_size
+        draw.ellipse(
+            (cx - r_outer, cy - r_outer, cx + r_outer, cy + r_outer),
+            fill=fill_outer,
+        )
+        draw.ellipse(
+            (cx - r_mid, cy - r_mid, cx + r_mid, cy + r_mid),
+            fill=fill_middle,
+        )
+        draw.ellipse(
+            (cx - r_inner, cy - r_inner, cx + r_inner, cy + r_inner),
+            fill=fill_inner,
+        )
 
     if is_transparent_bg:
         # Hintergrund-Magic-Farbe auf Alpha 0 setzen.
@@ -183,6 +230,18 @@ def main() -> int:
         help="Hintergrundfarbe des QR-Codes (Standard: white, z. B. #f0f0f0) oder 'transparent'",
     )
     p.add_argument(
+        "--box-size",
+        type=int,
+        default=10,
+        help="Pixel pro Modul (Standard: 10).",
+    )
+    p.add_argument(
+        "--border",
+        type=int,
+        default=1,
+        help="Rahmen in Modulbreiten (Standard: 1).",
+    )
+    p.add_argument(
         "--out",
         default="qr-output.png",
         help="Pfad der Ausgabedatei (PNG)",
@@ -195,12 +254,18 @@ def main() -> int:
         if not logo_path.is_absolute():
             logo_path = (Path.cwd() / logo_path).resolve()
         if not logo_path.exists():
+            print(
+                f"Warnung: Logo-Datei nicht gefunden, ohne Logo fortgesetzt: {logo_path}",
+                file=sys.stderr,
+            )
             logo_path = None
 
     caption = args.caption if args.caption is not None else args.url
 
     img = make_qr(
         args.url,
+        box_size=max(1, args.box_size),
+        border=max(0, args.border),
         logo_path=logo_path,
         caption=caption,
         back_color=args.background,

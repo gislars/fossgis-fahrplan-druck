@@ -1,9 +1,8 @@
 #!/usr/bin/env python3
 """
-Wrapper-Skript: erzeugt QR-Codes fuer die Links aus events/fossgis2026/index.html.
+Wrapper-Skript: erzeugt QR-Codes für die vier fest definierten Links (wie in index.html).
 
-Quelle: index.html Ausschnitt (Zeilen 677-692) mit 4 URLs.
-Ziel: events/fossgis2026/assets/*.png
+Ziel: events/<event>/assets/*.png oder *.svg (index.html nutzt .svg).
 """
 
 from __future__ import annotations
@@ -29,12 +28,18 @@ def parse_args() -> argparse.Namespace:
     p.add_argument(
         "--background",
         default="transparent",
-        help="Hintergrund fuer QR (Standard: 'transparent'; z. B. '#f0f0f0').",
+        help="Hintergrund für QR (Standard: 'transparent'; z. B. '#f0f0f0').",
+    )
+    p.add_argument(
+        "--format",
+        choices=("png", "svg"),
+        default="png",
+        help="Ausgabeformat: png oder svg (Standard: png).",
     )
     p.add_argument(
         "--dry-run",
         action="store_true",
-        help="Nur die aufgerufenen Kommandos anzeigen, nicht ausfuehren.",
+        help="Nur die aufgerufenen Kommandos anzeigen, nicht ausführen.",
     )
     return p.parse_args()
 
@@ -43,36 +48,50 @@ def main() -> int:
     args = parse_args()
 
     repo_root = Path(__file__).resolve().parent.parent
-    generator_script = repo_root / "scripts" / "generate_qr_code.py"
+    if args.format == "svg":
+        generator_script = repo_root / "scripts" / "generate_qr_code_svg.py"
+    else:
+        generator_script = repo_root / "scripts" / "generate_qr_code.py"
     if not generator_script.exists():
         raise SystemExit(f"Fehler: Generator-Skript nicht gefunden: {generator_script}")
 
-    # Logo liegt im top-level assets-Verzeichnis.
-    logo_path = repo_root / "assets" / "FossgisKompassRGB_600dpi.png"
-    if not logo_path.exists():
-        raise SystemExit(
-            f"Fehler: Logo-Datei nicht gefunden: '{logo_path}'. "
-            "Bitte Datei nach 'assets/' verschieben."
-        )
+    # Logo: SVG für vektorische QR-Ausgabe, PNG für Raster-PNG (PIL).
+    assets_dir = repo_root / "assets"
+    logo_svg = assets_dir / "FossgisKompassRGB.svg"
+    logo_png = assets_dir / "FossgisKompassRGB_600dpi.png"
+    if args.format == "svg":
+        logo_path = logo_svg
+        if not logo_path.exists():
+            raise SystemExit(
+                f"Fehler: SVG-Logo nicht gefunden: '{logo_path}'. "
+                "Bitte FossgisKompassRGB.svg unter assets/ ablegen."
+            )
+    else:
+        logo_path = logo_png
+        if not logo_path.exists():
+            raise SystemExit(
+                f"Fehler: PNG-Logo nicht gefunden: '{logo_path}'. "
+                "Bitte FossgisKompassRGB_600dpi.png unter assets/ ablegen."
+            )
 
     out_dir = repo_root / "events" / args.event / "assets"
     out_dir.mkdir(parents=True, exist_ok=True)
 
-    # URL -> Ausgabedatei (passend zu den vorhandenen <img src="..."> Eintraegen)
+    # URL -> Basis-Dateiname (ohne Dateiendung).
     items: list[tuple[str, str]] = [
-        ("https://www.bahnhof.de/goettingen/abfahrt", "qr-bahnhof_de.png"),
-        ("https://pretalx.com/fossgis2026/schedule/", "qr-fahrplan_pretalx_2026.png"),
+        ("https://www.bahnhof.de/goettingen/abfahrt", "qr-bahnhof_de"),
+        ("https://pretalx.com/fossgis2026/schedule/", "qr-fahrplan_pretalx_2026"),
         (
             "https://gislars.github.io/fossgis-fahrplan-druck/events/fossgis2026/",
-            "qr-fahrplan_druck_online_2026.png",
+            "qr-fahrplan_druck_online_2026",
         ),
-        ("https://mastodon.online/@FOSSGISeV", "qr-fossgis-mastodon.png"),
+        ("https://mastodon.online/@FOSSGISeV", "qr-fossgis-mastodon"),
     ]
 
-    for url, out_name in items:
-        out_path = out_dir / out_name
+    for url, out_basename in items:
+        out_path = out_dir / f"{out_basename}.{args.format}"
 
-        # Vor dem Generieren vorhandene Datei entfernen, damit garantiert ueberschrieben wird.
+        # Vor dem Generieren vorhandene Datei entfernen, damit garantiert überschrieben wird.
         if not args.dry_run:
             out_path.unlink(missing_ok=True)
 
@@ -92,7 +111,7 @@ def main() -> int:
             continue
 
         # Generator-Skript gibt ebenfalls "Gespeichert: ..." aus.
-        # Daher unterdruecken wir dessen stdout, damit der Wrapper nur einmal loggt.
+        # Daher unterdrücken wir dessen stdout, damit der Wrapper nur einmal loggt.
         subprocess.run(cmd, check=True, stdout=subprocess.DEVNULL)
         print(f"Gespeichert: {out_path}")
 

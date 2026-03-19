@@ -154,7 +154,8 @@
                 const columnsParam = parseInt(columnsRaw, 10);
                 const columns = isMobileColumns ? 1 : (Number.isFinite(columnsParam) && columnsParam > 0 ? Math.min(columnsParam, 4) : 4);
                 document.documentElement.style.setProperty('--columns', String(columns));
-                document.documentElement.style.setProperty('--page-width', isMobileColumns ? '100vw' : `${(841 / 4) * columns}mm`);
+                // Bildschirmbreite: 841mm Desktop, 100vw mobil; --columns nur Spalten im Inhalt, nicht die Gesamtbreite.
+                document.documentElement.style.setProperty('--page-width', isMobileColumns ? '100vw' : '841mm');
                 document.body.classList.toggle('mobile-columns', isMobileColumns);
 
                 if (usedViewportFallback) {
@@ -678,22 +679,22 @@
                         <div class="qr-codes-row">
                                 <div>
                                         <a href="https://www.bahnhof.de/goettingen/abfahrt" target="_blank" rel="noopener" style="display: block;">
-                                                <img src="assets/qr-bahnhof_de.png" alt="QR Code bahnhof.de" class="qr-code-placeholder">
+                                                <img src="assets/qr-bahnhof_de.svg" alt="QR Code bahnhof.de" class="qr-code-placeholder">
                                         </a>
                                 </div>
                                 <div>
                                         <a href="https://pretalx.com/fossgis2026/schedule/" target="_blank" rel="noopener" style="display: block;">
-                                                <img src="assets/qr-fahrplan_pretalx_2026.png" alt="QR Code Online-Fahrplan" class="qr-code-placeholder">
+                                                <img src="assets/qr-fahrplan_pretalx_2026.svg" alt="QR Code Online-Fahrplan" class="qr-code-placeholder">
                                         </a>
                                 </div>
                                 <div>
                                         <a href="https://gislars.github.io/fossgis-fahrplan-druck/events/fossgis2026/" target="_blank" rel="noopener" style="display: block;">
-                                                <img src="assets/qr-fahrplan_druck_online_2026.png" alt="QR Code Fahrplan-Druck" class="qr-code-placeholder">
+                                                <img src="assets/qr-fahrplan_druck_online_2026.svg" alt="QR Code Fahrplan-Druck" class="qr-code-placeholder">
                                         </a>
                                 </div>
                                 <div>
                                         <a href="https://mastodon.online/@FOSSGISeV" target="_blank" rel="noopener" style="display: block;">
-                                                <img src="assets/qr-fossgis-mastodon.png" alt="QR Code FOSSGIS Mastodon" class="qr-code-placeholder">
+                                                <img src="assets/qr-fossgis-mastodon.svg" alt="QR Code FOSSGIS Mastodon" class="qr-code-placeholder">
                                         </a>
                                 </div>
                         </div>
