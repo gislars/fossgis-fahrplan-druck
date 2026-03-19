@@ -39,20 +39,25 @@
 }
 
 @page {
-  size: A0 portrait;
-  width: 841mm; /* DIN A0 */
-  height: auto;
   margin: 10mm;
 }
 
 @media print {
   html, body {
-    width: 841mm;
+    width: 100%;
     height: auto;
     overflow: visible;
   }
   /* ensure content scales and avoids page breaks */
-  body { box-sizing: border-box; margin: 0; }
+  body {
+    box-sizing: border-box;
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+  }
+  :root {
+    --page-width: 100%;
+  }
   .no-break { page-break-inside: avoid; }
   
   /* Force background colors and images to print */
@@ -60,6 +65,26 @@
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
     color-adjust: exact;
+  }
+
+  /*
+   * Im PDF/Druck sollen Unterstreichungen komplett weg.
+   * Firefox kann Links im Print-Rendering sonst trotzdem optisch unterstreichen,
+   * daher global fuer alle Text-Decorations.
+   */
+  * {
+    text-decoration: none !important;
+    text-decoration-line: none !important;
+    border-bottom: 0 !important;
+    outline: none !important;
+  }
+
+  /* Firefox-spezifisch: Hyperlink-Dekorationen fuer Print abstellen. */
+  a,
+  a:visited,
+  a:hover,
+  a:active {
+    -moz-hyperlink-decoration: none !important;
   }
 }
 
@@ -116,7 +141,7 @@ noscript {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 10px;
+    margin-bottom: 0.05em;
     font-size: 36px;
 }
 
@@ -125,11 +150,12 @@ noscript {
 }
 
 .fg26-logo {
-    height: 2em;
-    min-height: 2em;
-    width: 200px;
-    max-width: 200px;
+    height: 2.5em;
+    min-height: 2.5em;
+    width: 340px;
+    max-width: 340px;
     display: block;
+    margin-top: 0mm;
     background-image: url('assets/FOSSGIS_Logo_RGB-238-127-0.svg');
     background-size: contain;
     background-repeat: no-repeat;
@@ -144,10 +170,18 @@ noscript {
 
 .title-section {
     display: flex;
-    gap: 60px;
+    justify-content: space-between;
+    gap: 0;
     margin-bottom: 30px;
     font-size: 36px;
-    align-items: center;
+    align-items: flex-end;
+    width: 100%;
+}
+
+.title-left {
+    display: flex;
+    gap: 60px;
+    align-items: flex-end;
 }
 
 .title-label {
@@ -322,16 +356,39 @@ noscript {
 }
 
 .qr-codes-row {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: 1.5em;
+    display: grid;
+    /* Versetzte Anordnung: qr1/qr2 oben, qr3/qr4 unten versetzt */
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-rows: auto auto;
+    justify-items: center;
+    align-items: start;
+    column-gap: 2.5em;
+    row-gap: 3em;
     width: 100%;
-    flex-wrap: wrap;
 }
 
 .qr-codes-row > div {
-    flex: 0 0 auto;
+    justify-self: center;
+}
+
+.qr-codes-row > div:nth-child(1) {
+    grid-column: 1;
+    grid-row: 1;
+}
+
+.qr-codes-row > div:nth-child(2) {
+    grid-column: 3;
+    grid-row: 1;
+}
+
+.qr-codes-row > div:nth-child(3) {
+    grid-column: 2;
+    grid-row: 2;
+}
+
+.qr-codes-row > div:nth-child(4) {
+    grid-column: 4;
+    grid-row: 2;
 }
 
 .room-plans-row {
@@ -356,9 +413,9 @@ noscript {
 }
 
 .qr-code-placeholder {
-    width: 120px;
-    height: 120px;
-    background-color: #f5f5f5;
+    width: 180px;
+    height: 180px;
+    background-color: transparent;
     display: block;
 }
 
@@ -394,7 +451,21 @@ noscript {
 }
 
 .departure-row.break-row {
-    border-left: 3px solid #999;
+    /* Die Hervorhebung soll nur in der ersten Zelle (Zeit) passieren. */
+    border-left: 0;
+}
+
+.departure-row.break-row .time {
+    /* Dezente Schraffur, nur links in der Zeit-Zelle. */
+    background-color: rgba(0, 0, 0, 0.035);
+    background-image: repeating-linear-gradient(
+        135deg,
+        rgba(0, 0, 0, 0.14) 0px,
+        rgba(0, 0, 0, 0.14) 2px,
+        rgba(0, 0, 0, 0) 2px,
+        rgba(0, 0, 0, 0) 6px
+    );
+    border-left: 3px solid rgba(0, 0, 0, 0.35);
 }
 
 .departure-row.break-row .destination {

@@ -25,6 +25,7 @@ Dieses Repository ist ein Fork für die FOSSGIS-Konferenz. Geplant ist, Änderun
 - **QR-Codes:** Das Skript `scripts/generate_qr_code.py` erzeugt QR-Codes mit runden Modulen, optionalem Logo und Beschriftung für Links (z. B. Fahrplan-URL, Pretalx, Mastodon); siehe `assets/README.md`.
 - **Lageplan / GeoJSON:** Die Raum-URLs zum [Lageplan der Uni Göttingen](https://lageplan.uni-goettingen.de) werden von `scripts/generate_lageplan_mapping_fossgis2026.py` in `events/fossgis2026/lageplan-urls.js` geschrieben. Ein GeoJSON mit Polygongeometrien aller Konferenzräume wird von `scripts/generate_fossgis2026_rooms_geojson.py` erzeugt (`events/fossgis2026/rooms.geojson`); die Geometrien stammen aus dem ArcGIS Feature Service der Uni (Räume-Layer).
 - **Filter-Links (FOSSGIS 2026):** Die URL-Parameter `only-track`, `only-room` und `only-day` lassen sich per Klick setzen und kombinieren. In der Legende sind die Track-Kürzel („Events im Hauptverkehr“) und die Raumliste („Räume / Rooms“) als Links umgesetzt: Ein Klick aktiviert den jeweiligen Filter (bestehende Parameter bleiben erhalten), ein zweiter Klick auf denselben Eintrag entfernt nur diesen Parameter (Toggle). Die Tageszeilen „Tag 1“, „Tag 2“ usw. in der Mehr-Tage-Ansicht sind ebenfalls Links zum Setzen von `only-day`. Ein zentraler **Reset** ist über den Seitentitel („FOSSGIS Konferenz 2026“) möglich: Ein Klick lädt die Seite ohne Query-Parameter und hebt alle Filter auf.
+- Link-Unterstreichungen werden im Print per `no-link-underline=1` entfernt, Workaround für den Druck.
 
 ## Quick use
 

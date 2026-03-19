@@ -15,19 +15,19 @@
         <!-- Header -->
         <div class="header">
             <div class="header-left">24.03.2026 – 28.03.2026</div>
-            <div class="header-right">
-                <div class="fg26-logo" role="img" aria-label="FOSSGIS e.V."></div>
-            </div>
         </div>
 
         <!-- Title Section -->
         <div class="title-section">
-            <div class="title-label">
-                <span class="title-label-bold">Abfahrt</span>
-                <span class="title-label-italic">Departure</span>
-                <span class="title-label-italic">Départ</span>
+            <div class="title-left">
+                <div class="title-label">
+                    <span class="title-label-bold">Abfahrt</span>
+                    <span class="title-label-italic">Departure</span>
+                    <span class="title-label-italic">Départ</span>
+                </div>
+                <div class="station-name">FOSSGIS Konferenz 2026</div>
             </div>
-            <div class="station-name">FOSSGIS Konferenz 2026</div>
+            <div class="fg26-logo" role="img" aria-label="FOSSGIS e.V."></div>
         </div>
 
         <!-- Column Headers (Anzahl per URL-Parameter columns, z. B. columns=mobile) -->
@@ -139,6 +139,8 @@
                 const onlyTrackParam = params.get('only-track');
                 const onlyRoomParam = params.get('only-room');
                 const tintedBackgroundParam = params.get('tinted-background');
+                const noLinkUnderlineParam = params.get('no-link-underline');
+                const disableLinkUnderline = noLinkUnderlineParam !== null && String(noLinkUnderlineParam).toLowerCase() !== 'false';
                 let columnsRaw = params.get('columns');
                 if (columnsRaw == null) {
                     columnsRaw = window.matchMedia('(max-width: 768px)').matches ? 'mobile' : '4';
@@ -675,20 +677,24 @@
                         * Du suchst hier leider an der falschen Stelle.<br><br>
                         <div class="qr-codes-row">
                                 <div>
-                                        <img src="assets/qr-bahnhof_de.png" alt="QR Code bahnhof.de" class="qr-code-placeholder">
-                                        <div style="font-size: 0.8em; text-align: center; margin-top: 0.25em;"><a href="https://bahnhof.de" target="_blank" rel="noopener">bahnhof.de</a></div>
+                                        <a href="https://www.bahnhof.de/goettingen/abfahrt" target="_blank" rel="noopener" style="display: block;">
+                                                <img src="assets/qr-bahnhof_de.png" alt="QR Code bahnhof.de" class="qr-code-placeholder">
+                                        </a>
                                 </div>
                                 <div>
-                                        <img src="assets/qr-fahrplan_pretalx_2026.png" alt="QR Code Online-Fahrplan" class="qr-code-placeholder">
-                                        <div style="font-size: 0.8em; text-align: center; margin-top: 0.25em;"><a href="https://pretalx.com/fossgis2026/schedule/" target="_blank" rel="noopener">Online-Fahrplan (pretalx)</a></div>
+                                        <a href="https://pretalx.com/fossgis2026/schedule/" target="_blank" rel="noopener" style="display: block;">
+                                                <img src="assets/qr-fahrplan_pretalx_2026.png" alt="QR Code Online-Fahrplan" class="qr-code-placeholder">
+                                        </a>
                                 </div>
                                 <div>
-                                        <img src="assets/qr-fahrplan_druck_online_2026.png" alt="QR Code Fahrplan-Druck" class="qr-code-placeholder">
-                                        <div style="font-size: 0.8em; text-align: center; margin-top: 0.25em;"><a href="https://gislars.github.io/fossgis-fahrplan-druck/events/fossgis2026/" target="_blank" rel="noopener">Fahrplan-Druck (online)</a></div>
+                                        <a href="https://gislars.github.io/fossgis-fahrplan-druck/events/fossgis2026/" target="_blank" rel="noopener" style="display: block;">
+                                                <img src="assets/qr-fahrplan_druck_online_2026.png" alt="QR Code Fahrplan-Druck" class="qr-code-placeholder">
+                                        </a>
                                 </div>
                                 <div>
-                                        <img src="assets/qr-fossgis-mastodon.png" alt="QR Code FOSSGIS Mastodon" class="qr-code-placeholder">
-                                        <div style="font-size: 0.8em; text-align: center; margin-top: 0.25em;"><a href="https://mastodon.online/@FOSSGISeV" target="_blank" rel="noopener">FOSSGIS Mastodon</a></div>
+                                        <a href="https://mastodon.online/@FOSSGISeV" target="_blank" rel="noopener" style="display: block;">
+                                                <img src="assets/qr-fossgis-mastodon.png" alt="QR Code FOSSGIS Mastodon" class="qr-code-placeholder">
+                                        </a>
                                 </div>
                         </div>
                         <br>
@@ -847,6 +853,17 @@
                 }
 
                 if (window.lucide) window.lucide.createIcons();
+
+                // optional: in Browser und im PDF keine Link-Unterstreichungen rendern.
+                // Ansatz: Entferne fuer Text-Links das href, damit Firefox im Print-Rendering keine Hyperlink-Dekoration erzeugt.
+                if (disableLinkUnderline) {
+                    const anchors = document.querySelectorAll('a[href]');
+                    anchors.forEach((a) => {
+                        // QR-Codes sollen weiterhin klickbar bleiben.
+                        if (a.querySelector('img')) return;
+                        a.removeAttribute('href');
+                    });
+                }
             })();
         </script>
 </body>

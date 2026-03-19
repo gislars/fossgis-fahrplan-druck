@@ -69,11 +69,17 @@ def make_qr(
         border: Rahmen in Modulbreiten.
         logo_path: Pfad zum Logo-Bild (zentriert eingeblendet).
         caption: Text unter dem QR-Code.
-        back_color: Hintergrundfarbe (Name oder Hex, z. B. 'white' oder '#f0f0f0').
+        back_color: Hintergrundfarbe (Name oder Hex, z. B. 'white' oder '#f0f0f0') oder
+            'transparent' (PNG mit Alpha).
 
     Returns:
-        PIL Image im RGB-Modus.
+        PIL Image im RGBA-Modus (PNG-kompatibel).
     """
+    is_transparent_bg = back_color.strip().lower() == "transparent"
+    # Wir rendern den Hintergrund zunächst in einer Magic-Farbe und machen sie danach transparent.
+    # So beeinflussen wir keine Logo-Pixel, die ggf. auch weiß sind.
+    magic_back_rgb = (1, 2, 3)
+
     qr = qrcode.QRCode(
         error_correction=ERROR_CORRECT_H,
         box_size=box_size,
@@ -82,8 +88,15 @@ def make_qr(
     qr.add_data(data)
     qr.make(fit=True)
 
-    rgb_back = ImageColor.getrgb(back_color)
-    color_mask = SolidFillColorMask(back_color=rgb_back, front_color=(0, 0, 0))
+    rgb_back: tuple[int, int, int] | None
+    if is_transparent_bg:
+        rgb_back = None
+        back_rgb_for_mask = magic_back_rgb
+    else:
+        rgb_back = ImageColor.getrgb(back_color)
+        back_rgb_for_mask = rgb_back
+
+    color_mask = SolidFillColorMask(back_color=back_rgb_for_mask, front_color=(0, 0, 0))
 
     img = qr.make_image(
         image_factory=StyledPilImage,
@@ -92,9 +105,18 @@ def make_qr(
         color_mask=color_mask,
     )
     if hasattr(img, "_img"):
-        img = img._img.convert("RGB")
-    else:
-        img = img.convert("RGB")
+        img = img._img
+    img = img.convert("RGBA")
+
+    if is_transparent_bg:
+        # Hintergrund-Magic-Farbe auf Alpha 0 setzen.
+        px = img.load()
+        w, h = img.size
+        for y in range(h):
+            for x in range(w):
+                r, g, b, a = px[x, y]
+                if (r, g, b) == magic_back_rgb:
+                    px[x, y] = (r, g, b, 0)
 
     logo_path = Path(logo_path) if logo_path else None
     if logo_path and logo_path.exists():
@@ -114,11 +136,21 @@ def make_qr(
             + CAPTION_GAP_BELOW
         )
         new_h = img.height + pad
-        out = Image.new("RGB", (img.width, new_h), rgb_back)
+        if is_transparent_bg:
+            out = Image.new("RGBA", (img.width, new_h), (0, 0, 0, 0))
+        else:
+            assert rgb_back is not None
+            out = Image.new("RGBA", (img.width, new_h), (*rgb_back, 255))
         out.paste(img, (0, 0))
         draw = ImageDraw.Draw(out)
         text_y = img.height + CAPTION_GAP_ABOVE
-        draw.text((img.width // 2, text_y), caption, fill="black", font=font, anchor="mt")
+        draw.text(
+            (img.width // 2, text_y),
+            caption,
+            fill=(0, 0, 0, 255),
+            font=font,
+            anchor="mt",
+        )
         return out
     return img
 
@@ -148,7 +180,7 @@ def main() -> int:
         "--background",
         default="white",
         metavar="FARBE",
-        help="Hintergrundfarbe des QR-Codes (Standard: white, z. B. #f0f0f0)",
+        help="Hintergrundfarbe des QR-Codes (Standard: white, z. B. #f0f0f0) oder 'transparent'",
     )
     p.add_argument(
         "--out",
@@ -177,7 +209,9 @@ def main() -> int:
     if not out_path.is_absolute():
         out_path = (Path.cwd() / out_path).resolve()
     out_path.parent.mkdir(parents=True, exist_ok=True)
-    img.save(out_path)
+    if out_path.suffix.lower() != ".png":
+        raise SystemExit("Fehler: Das Skript erzeugt ausschließlich PNG-Ausgaben.")
+    img.save(out_path, format="PNG")
     print(f"Gespeichert: {out_path}")
     return 0
 
