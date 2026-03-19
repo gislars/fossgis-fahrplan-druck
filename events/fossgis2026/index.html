@@ -61,7 +61,6 @@
     </div>
 
         <script src="../../assets/lucide.js"></script>
-        <script src="lageplan-urls.js"></script>
         <script>
             (async () => {
                 // Event-specific configuration
@@ -719,8 +718,7 @@
                         const abbrev = abbreviateRoom(room.name);
                         const paramValue = abbrev !== '*' ? abbrev : room.name;
                         const displayCol2 = getRoomLegendDisplayName(room.name, room.description);
-                        const lageplanUrl = (typeof lageplanUrlByRoom !== 'undefined' && lageplanUrlByRoom[abbrev]) ? lageplanUrlByRoom[abbrev] : '';
-                        const col2Html = lageplanUrl ? `<a href="${escapeHtml(lageplanUrl)}" target="_blank" rel="noopener">${escapeHtml(displayCol2)}</a>` : escapeHtml(displayCol2);
+                        const col2Html = escapeHtml(displayCol2);
                         return `<tr><td><a href="${buildFilterToggleUrl('only-room', paramValue)}">${escapeHtml(abbrev)}</a></td><td>${col2Html}</td></tr>`;
                     }).join('');
                     return { trackRowsHtml, roomRowsHtml };

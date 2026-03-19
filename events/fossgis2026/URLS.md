@@ -10,7 +10,6 @@ Alle per URL eingebundenen oder referenzierten Ressourcen in `index.html` und `s
 | Beschreibung | Pfad |
 |--------------|------|
 | Lucide Icons (UMD) | `../../assets/lucide.js` |
-| Lageplan-URL-Mapping (generiert) | `lageplan-urls.js` |
 
 ### Bilder / CSS-Hintergründe (lokal)
 | Beschreibung | Pfad |
@@ -43,7 +42,6 @@ Alle per URL eingebundenen oder referenzierten Ressourcen in `index.html` und `s
 | FOSSGIS Mastodon | `https://mastodon.online/@FOSSGISeV` |
 | Repo fossgis-fahrplan-druck | `https://github.com/gislars/fossgis-fahrplan-druck` |
 | Repo c3-fahrplan-druck (Original) | `https://github.com/felixdivo/c3-fahrplan-druck` |
-| Lageplan Uni Göttingen (pro Raum aus Legende) | `https://lageplan.uni-goettingen.de/?q=...` bzw. `?ident=...` |
 
 ---
 
@@ -51,8 +49,6 @@ Alle per URL eingebundenen oder referenzierten Ressourcen in `index.html` und `s
 
 - `style.css` (Stylesheet)
 - `../../assets/lucide.js` (Lucide Icons, UMD-Build im Repo)
-- `lageplan-urls.js` (von `scripts/generate_lageplan_mapping_fossgis2026.py` erzeugt)
-- `rooms.geojson` (GeoJSON mit Raumgeometrien; von `scripts/generate_fossgis2026_rooms_geojson.py` aus dem Uni-Lageplan-API erzeugt)
 - `assets/qr-*.svg` (QR-Codes als SVG: bahnhof.de, pretalx, Fahrplan-Druck, FOSSGIS Mastodon)
 - `fonts/*` (Schriftdateien in style.css)
 
