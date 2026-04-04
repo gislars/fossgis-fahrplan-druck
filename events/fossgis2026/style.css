@@ -128,7 +128,6 @@ body.mobile-columns {
     width: 100%;
     max-width: 100%;
     padding: 16px;
-    overflow-x: clip;
     box-sizing: border-box;
 }
 
@@ -189,9 +188,42 @@ body.mobile-columns .header .fg26-logo {
     background-position: right center;
 }
 
+body.mobile-columns .title-departure-line {
+    margin-bottom: 0.65rem;
+}
+
 body.mobile-columns .schedule-container {
     min-width: 0;
     max-width: 100%;
+    overflow-x: clip;
+}
+
+/* Konferenztitel, Toolbar, Tabellenkopf: beim vertikalen Scrollen sichtbar bleiben */
+body.mobile-columns .schedule-mobile-sticky-head {
+    position: sticky;
+    top: env(safe-area-inset-top, 0);
+    z-index: 8;
+    background-color: var(--tinted-background-color);
+    padding-bottom: 0.35rem;
+    margin-bottom: 0.25rem;
+    box-shadow: 0 1px 0 rgba(0, 0, 0, 0.12);
+}
+
+body.mobile-columns:not(.tinted-background) .schedule-mobile-sticky-head {
+    background-color: #fff;
+}
+
+body.mobile-columns .schedule-mobile-sticky-head .schedule-mobile-only-station {
+    margin-bottom: 0.85rem;
+}
+
+/* Tages- und Zeitfenster-Baender: unter dem Haupt-Sticky kleben (nur columns=mobile / eine Spalte) */
+body.mobile-columns .day-group > .time-range,
+body.mobile-columns .time-range-group > .time-range {
+    position: sticky;
+    top: calc(env(safe-area-inset-top, 0px) + var(--schedule-sticky-stack-offset, 120px));
+    z-index: 5;
+    box-shadow: 0 1px 0 rgba(0, 0, 0, 0.22);
 }
 
 /* Tabellenbereich: kleinere Schrift nur in der Mobile-Ansicht (columns=mobile) */
@@ -266,6 +298,16 @@ noscript {
     width: 100%;
     height: auto;
     margin: 0;
+}
+
+/* Mobile: geteilte Titelzeile + Sticky; Desktop: klassische eine title-section (schedule-desktop-title) */
+body:not(.mobile-columns) .title-departure-line,
+body:not(.mobile-columns) .schedule-mobile-only-station {
+    display: none;
+}
+
+body.mobile-columns .schedule-desktop-title {
+    display: none;
 }
 
 .header {
@@ -1069,6 +1111,15 @@ body.tinted-background .clear-favorites-dialog .toolbar-btn:hover:not(:disabled)
 }
 
 @media print {
+    .schedule-desktop-title {
+        display: block !important;
+    }
+
+    .title-departure-line,
+    .schedule-mobile-only-station {
+        display: none !important;
+    }
+
     .schedule-toolbar,
     .share-banner-region,
     .share-error-banner,
@@ -1080,5 +1131,21 @@ body.tinted-background .clear-favorites-dialog .toolbar-btn:hover:not(:disabled)
     /* Favorite star: screen interaction only */
     .time-with-fav .fav-toggle {
         display: none !important;
+    }
+    .schedule-mobile-sticky-head {
+        position: static !important;
+        top: auto !important;
+        z-index: auto !important;
+        box-shadow: none !important;
+        padding-bottom: 0 !important;
+        margin-bottom: 0 !important;
+    }
+
+    body.mobile-columns .day-group > .time-range,
+    body.mobile-columns .time-range-group > .time-range {
+        position: static !important;
+        top: auto !important;
+        z-index: auto !important;
+        box-shadow: none !important;
     }
 }

@@ -18,30 +18,35 @@
             <div class="fg26-logo" role="img" aria-label="FOSSGIS e.V."></div>
         </div>
 
-        <!-- Title Section -->
-        <div class="title-section">
-            <div class="title-left">
-                <div class="title-label">
-                    <span class="title-label-bold">Abfahrt</span>
-                    <span class="title-label-italic">Departure</span>
-                    <span class="title-label-italic">Départ</span>
+        <div class="schedule-desktop-title">
+            <div class="title-section">
+                <div class="title-left">
+                    <div class="title-label">
+                        <span class="title-label-bold">Abfahrt</span>
+                        <span class="title-label-italic">Departure</span>
+                        <span class="title-label-italic">Départ</span>
+                    </div>
+                    <div class="station-name">FOSSGIS Konferenz 2026</div>
                 </div>
+            </div>
+        </div>
+
+        <div class="title-departure-line">
+            <div class="title-label">
+                <span class="title-label-bold">Abfahrt</span>
+                <span class="title-label-italic">Departure</span>
+                <span class="title-label-italic">Départ</span>
+            </div>
+        </div>
+
+        <div class="schedule-mobile-sticky-head">
+        <div class="title-section schedule-mobile-only-station">
+            <div class="title-left">
                 <div class="station-name">FOSSGIS Konferenz 2026</div>
             </div>
         </div>
 
         <div id="schedule-toolbar-root" tabindex="-1"></div>
-        <div id="schedule-banners-root"></div>
-        <div id="schedule-status-root" role="status" aria-live="polite" class="schedule-status-sr"></div>
-
-        <dialog id="clear-favorites-dialog" class="clear-favorites-dialog" aria-labelledby="clear-favorites-dialog-title">
-            <h2 id="clear-favorites-dialog-title">Alle Favoriten entfernen?</h2>
-            <p class="clear-favorites-dialog-text" id="clear-favorites-dialog-text"></p>
-            <div class="clear-favorites-dialog-actions">
-                <button type="button" class="toolbar-btn" id="clear-favorites-dialog-cancel" autofocus>Abbrechen</button>
-                <button type="button" class="toolbar-btn" id="clear-favorites-dialog-confirm">Alle entfernen</button>
-            </div>
-        </dialog>
 
         <!-- Column Headers (Anzahl per URL-Parameter columns, z. B. columns=mobile) -->
         <div class="column-headers-wrapper" id="column-headers-wrapper">
@@ -66,6 +71,19 @@
                 </div>
             </template>
         </div>
+        </div>
+
+        <div id="schedule-banners-root"></div>
+        <div id="schedule-status-root" role="status" aria-live="polite" class="schedule-status-sr"></div>
+
+        <dialog id="clear-favorites-dialog" class="clear-favorites-dialog" aria-labelledby="clear-favorites-dialog-title">
+            <h2 id="clear-favorites-dialog-title">Alle Favoriten entfernen?</h2>
+            <p class="clear-favorites-dialog-text" id="clear-favorites-dialog-text"></p>
+            <div class="clear-favorites-dialog-actions">
+                <button type="button" class="toolbar-btn" id="clear-favorites-dialog-cancel" autofocus>Abbrechen</button>
+                <button type="button" class="toolbar-btn" id="clear-favorites-dialog-confirm">Alle entfernen</button>
+            </div>
+        </dialog>
 
         <!-- Departure Rows (Struktur wie Upstream: Inhalt in .departure-table-content) -->
         <div class="departure-table">
@@ -303,7 +321,7 @@
 
                 // DOM hooks
                 const headerLeft = document.querySelector('.header-left');
-                const stationNameEl = document.querySelector('.station-name');
+                const stationNameEls = document.querySelectorAll('.station-name');
                 const columnHeadersWrapper = document.getElementById('column-headers-wrapper');
                 const columnHeadersTemplate = document.getElementById('column-headers-template');
                 const departureTable = document.querySelector('.departure-table');
@@ -312,6 +330,23 @@
                 const bannersRoot = document.getElementById('schedule-banners-root');
                 const statusRoot = document.getElementById('schedule-status-root');
                 if (!departureTable || !departureTableContent || !columnHeadersWrapper || !columnHeadersTemplate) return;
+
+                const scheduleMobileStickyHead = document.querySelector('.schedule-mobile-sticky-head');
+                const updateScheduleStickyStackOffset = () => {
+                    if (!scheduleMobileStickyHead || !document.body.classList.contains('mobile-columns')) {
+                        document.documentElement.style.removeProperty('--schedule-sticky-stack-offset');
+                        return;
+                    }
+                    const h = scheduleMobileStickyHead.getBoundingClientRect().height;
+                    document.documentElement.style.setProperty('--schedule-sticky-stack-offset', `${Math.max(0, Math.ceil(h))}px`);
+                };
+                if (scheduleMobileStickyHead && typeof ResizeObserver !== 'undefined') {
+                    const stickyHeadResizeObserver = new ResizeObserver(() => {
+                        updateScheduleStickyStackOffset();
+                    });
+                    stickyHeadResizeObserver.observe(scheduleMobileStickyHead);
+                }
+                window.addEventListener('resize', updateScheduleStickyStackOffset);
 
                 const clearFavoritesDialogTextEl = document.getElementById('clear-favorites-dialog-text');
                 if (clearFavoritesDialogTextEl) {
@@ -372,10 +407,12 @@
                 let programFiltersActive = true;
 
                 const updateStationTitle = (filterLabelParts) => {
-                    if (stationNameEl && stationName) {
-                        const titleText = filterLabelParts.length ? `${stationName} — ${filterLabelParts.join(' — ')}` : stationName;
-                        stationNameEl.innerHTML = `<a href="${buildResetUrl()}" title="Alle Filter zurücksetzen">${escapeHtml(titleText)}</a>`;
-                    }
+                    if (!stationName || stationNameEls.length === 0) return;
+                    const titleText = filterLabelParts.length ? `${stationName} — ${filterLabelParts.join(' — ')}` : stationName;
+                    const html = `<a href="${buildResetUrl()}" title="Alle Filter zurücksetzen">${escapeHtml(titleText)}</a>`;
+                    stationNameEls.forEach((el) => {
+                        el.innerHTML = html;
+                    });
                 };
 
                 const buildFilterLabelParts = () => {
@@ -1313,6 +1350,7 @@
                     if (viewMode === VIEW_SHARE_ERROR) {
                         departureTableContent.innerHTML = '';
                         if (window.lucide) window.lucide.createIcons();
+                        requestAnimationFrame(() => updateScheduleStickyStackOffset());
                         return;
                     }
 
@@ -1328,6 +1366,7 @@
                         departureTableContent.innerHTML =
                             '<div class="favorites-empty" role="status">' + escapeHtml(FAVORITES_COPY.emptyState) + '</div>';
                         if (window.lucide) window.lucide.createIcons();
+                        requestAnimationFrame(() => updateScheduleStickyStackOffset());
                         return;
                     }
 
@@ -1360,11 +1399,8 @@
                                 <div><a href="${buildFilterToggleUrl('only-day', dayIndex)}">${dayLabel}</a></div>
                                 <div></div>
                         </div>`;
-                            const firstRowHTML = renderRow(dayRows[0]);
-                            departureTableContent.insertAdjacentHTML('beforeend', `<div class="day-group">${dayHeaderHTML}${firstRowHTML}</div>`);
-                            for (let i = 1; i < dayRows.length; i += 1) {
-                                departureTableContent.insertAdjacentHTML('beforeend', renderRow(dayRows[i]));
-                            }
+                            const rowsHTML = dayRows.map((row) => renderRow(row)).join('');
+                            departureTableContent.insertAdjacentHTML('beforeend', `<div class="day-group">${dayHeaderHTML}${rowsHTML}</div>`);
                         });
 
                         const { trackRowsHtml, roomRowsHtml } = buildLegendFilterHtml(data);
@@ -1431,11 +1467,8 @@
                             <div></div>
                         </div>`
                                 : '';
-                            const firstRowHTML = renderRow(rows[0]);
-                            departureTableContent.insertAdjacentHTML('beforeend', `<div class="time-range-group">${headerHTML}${firstRowHTML}</div>`);
-                            for (let i = 1; i < rows.length; i += 1) {
-                                departureTableContent.insertAdjacentHTML('beforeend', renderRow(rows[i]));
-                            }
+                            const rowsHTML = rows.map((row) => renderRow(row)).join('');
+                            departureTableContent.insertAdjacentHTML('beforeend', `<div class="time-range-group">${headerHTML}${rowsHTML}</div>`);
                         });
 
                         const takeWithText =
@@ -1451,12 +1484,20 @@
 
                     if (forPrint || viewMode === VIEW_NORMAL || viewMode === VIEW_OWN_FAVORITES) {
                         if (!isSingleDay) runMultiDay();
-                        else if (runSingleDay() === false) return;
+                        else if (runSingleDay() === false) {
+                            if (window.lucide) window.lucide.createIcons();
+                            requestAnimationFrame(() => updateScheduleStickyStackOffset());
+                            return;
+                        }
                     } else {
                         runMultiDay();
                     }
 
                     if (window.lucide) window.lucide.createIcons();
+
+                    requestAnimationFrame(() => {
+                        updateScheduleStickyStackOffset();
+                    });
 
                     if (disableLinkUnderline) {
                         const anchors = document.querySelectorAll('a[href]');
