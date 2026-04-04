@@ -124,8 +124,73 @@ body {
 }
 
 body.mobile-columns {
-    width: 100vw;
+    width: 100%;
+    max-width: 100%;
     padding: 16px;
+    overflow-x: clip;
+    box-sizing: border-box;
+}
+
+body.mobile-columns .header {
+    font-size: clamp(1.125rem, 4.2vw, 2.25rem);
+    flex-wrap: nowrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    margin-bottom: 0.35rem;
+}
+
+body.mobile-columns .header-left {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+body.mobile-columns .title-section {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.75rem;
+    margin-bottom: 1.25rem;
+    width: 100%;
+}
+
+body.mobile-columns .title-left {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.45rem;
+    min-width: 0;
+    width: 100%;
+    max-width: 100%;
+}
+
+body.mobile-columns .title-label {
+    flex-wrap: wrap;
+    row-gap: 0.2em;
+    column-gap: 0.45rem;
+    font-size: clamp(1rem, 4vw, 2.25rem);
+    max-width: 100%;
+}
+
+body.mobile-columns .station-name {
+    font-size: clamp(1.05rem, 4.1vw, 2.25rem);
+    overflow-wrap: anywhere;
+    word-break: break-word;
+    width: 100%;
+    max-width: 100%;
+}
+
+body.mobile-columns .header .fg26-logo {
+    width: min(200px, 42vw);
+    max-width: 200px;
+    min-width: 0;
+    flex-shrink: 0;
+    height: 2.35rem;
+    min-height: 2.35rem;
+    background-position: right center;
+}
+
+body.mobile-columns .schedule-container {
+    min-width: 0;
+    max-width: 100%;
 }
 
 body.tinted-background {
@@ -502,6 +567,20 @@ noscript {
     padding: var(--cell-padding);
 }
 
+.time-with-fav {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 4px;
+}
+
+.time-with-fav .time-text {
+    display: block;
+    width: 100%;
+    text-align: center;
+}
+
 .trains,
 .route,
 .row-number {
@@ -618,4 +697,265 @@ a.no-video-icon:hover {
     height: 0.9em;
     stroke-width: 2px;
     flex-shrink: 0;
+}
+
+/* Favorite toggle: no border; inactive outline only, active fill/stroke in accent */
+.time-with-fav .fav-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 32px;
+    min-height: 32px;
+    padding: 4px;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    font-size: 14px;
+    line-height: 1;
+    border-radius: 2px;
+    flex-shrink: 0;
+    box-shadow: none;
+}
+
+.time-with-fav .fav-toggle:hover {
+    background: rgba(0, 0, 0, 0.06);
+}
+
+.time-with-fav .fav-toggle:focus-visible {
+    outline: 2px solid var(--accent-color);
+    outline-offset: 2px;
+}
+
+.time-with-fav .fav-toggle [data-lucide] {
+    width: 1.15em;
+    height: 1.15em;
+    stroke-width: 2px;
+}
+
+.time-with-fav .fav-toggle:not([aria-pressed="true"]) [data-lucide] {
+    stroke: rgba(0, 0, 0, 0.55);
+    fill: none;
+    color: rgba(0, 0, 0, 0.55);
+}
+
+.time-with-fav .fav-toggle[aria-pressed="true"] [data-lucide] {
+    stroke: var(--accent-color);
+    fill: var(--accent-color);
+    color: var(--accent-color);
+}
+
+.schedule-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.45rem 0.55rem;
+    margin-bottom: 0.45rem;
+    padding: 0.35rem 0;
+}
+
+body.mobile-columns .schedule-toolbar {
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: stretch;
+    gap: 0.3rem 0.35rem;
+    justify-content: stretch;
+}
+
+body.mobile-columns .schedule-toolbar button {
+    flex: 1 1 0;
+    min-width: 0;
+    padding-left: 0.3em;
+    padding-right: 0.3em;
+    font-size: 11px;
+}
+
+body.mobile-columns .schedule-toolbar button.toolbar-btn--compact {
+    min-height: 2.5rem;
+}
+
+.schedule-toolbar button {
+    box-sizing: border-box;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 500;
+    line-height: 1.2;
+    padding: 0.35em 0.5em;
+    cursor: pointer;
+    color: #000;
+    border: 1px solid #000;
+    background: var(--tinted-background-color);
+}
+
+body:not(.tinted-background) .schedule-toolbar button {
+    background: #fff;
+}
+
+body.tinted-background .schedule-toolbar button:hover:not(:disabled) {
+    filter: brightness(0.92);
+}
+
+/* Kompakte Icon+Text-Buttons; ausreichende Klickfläche für Touch */
+.schedule-toolbar button.toolbar-btn--compact {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.35em;
+    min-height: 2.75rem;
+    max-width: 100%;
+}
+
+.schedule-toolbar .toolbar-btn-icon {
+    display: inline-flex;
+    flex-shrink: 0;
+    width: 1.05em;
+    height: 1.05em;
+}
+
+.schedule-toolbar .toolbar-btn-icon svg {
+    width: 100%;
+    height: 100%;
+}
+
+.schedule-toolbar .toolbar-btn-text {
+    white-space: nowrap;
+}
+
+.schedule-toolbar .toolbar-share-link {
+    text-align: center;
+}
+
+.schedule-toolbar button:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
+
+@media (max-width: 520px) {
+    .schedule-toolbar {
+        gap: 0.35rem 0.4rem;
+    }
+
+    body.mobile-columns .schedule-toolbar {
+        gap: 0.35rem 0.4rem;
+    }
+
+    .schedule-toolbar button {
+        font-size: 12px;
+        padding: 0.3em 0.45em;
+    }
+}
+
+.share-url-warn {
+    font-size: 12px;
+    color: #a33;
+    margin: 0.25rem 0 0;
+    width: 100%;
+}
+
+.clear-favorites-dialog {
+    max-width: min(100vw - 2rem, 28rem);
+    padding: 1rem 1.1rem;
+    border: 2px solid #000;
+    background: var(--tinted-background-color);
+    font-family: inherit;
+}
+
+body:not(.tinted-background) .clear-favorites-dialog {
+    background: #fff;
+}
+
+.clear-favorites-dialog::backdrop {
+    background: rgba(0, 0, 0, 0.35);
+}
+
+.clear-favorites-dialog h2 {
+    font-size: 1.05rem;
+    font-weight: 600;
+    margin: 0 0 0.5rem;
+}
+
+.clear-favorites-dialog-text {
+    font-size: 0.9rem;
+    line-height: 1.35;
+    margin: 0 0 1rem;
+}
+
+.clear-favorites-dialog-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    justify-content: flex-end;
+}
+
+.clear-favorites-dialog .toolbar-btn {
+    min-height: 2.5rem;
+    background: var(--tinted-background-color);
+    border: 1px solid #000;
+    color: #000;
+}
+
+body:not(.tinted-background) .clear-favorites-dialog .toolbar-btn {
+    background: #fff;
+}
+
+body.tinted-background .clear-favorites-dialog .toolbar-btn:hover:not(:disabled) {
+    filter: brightness(0.92);
+}
+
+.favorites-empty {
+    padding: 16px;
+    font-size: 16px;
+    color: #333;
+}
+
+.share-banner-region {
+    border: 1px solid #000;
+    padding: 0.45rem 0.65rem;
+    margin-bottom: 0.45rem;
+    background: #fff;
+}
+
+.share-banner-region h2 {
+    font-size: 16px;
+    font-weight: 700;
+    margin-bottom: 0.25em;
+}
+
+.share-banner-region p {
+    font-size: 13px;
+    line-height: 1.35;
+}
+
+.share-error-banner {
+    border: 2px solid #a00;
+    padding: 0.45rem 0.65rem;
+    margin-bottom: 0.45rem;
+    background: #fff8f8;
+    font-size: 14px;
+}
+
+.schedule-status-sr {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+@media print {
+    .schedule-toolbar,
+    .share-banner-region,
+    .share-error-banner,
+    .schedule-status-sr,
+    .share-url-warn,
+    .clear-favorites-dialog {
+        display: none !important;
+    }
+    /* Favorite star: screen interaction only */
+    .time-with-fav .fav-toggle {
+        display: none !important;
+    }
 }
