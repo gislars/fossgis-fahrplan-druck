@@ -348,6 +348,18 @@
                 }
                 window.addEventListener('resize', updateScheduleStickyStackOffset);
 
+                const syncLegendToggleState = () => {
+                    const wrap = departureTableContent.querySelector('.legend-wrapper');
+                    const btn = document.getElementById('legend-toggle');
+                    if (!wrap || !btn) return;
+                    const mobile = document.body.classList.contains('mobile-columns');
+                    if (mobile) {
+                        btn.setAttribute('aria-expanded', wrap.classList.contains('legend-expanded') ? 'true' : 'false');
+                    } else {
+                        btn.setAttribute('aria-expanded', 'true');
+                    }
+                };
+
                 const clearFavoritesDialogTextEl = document.getElementById('clear-favorites-dialog-text');
                 if (clearFavoritesDialogTextEl) {
                     clearFavoritesDialogTextEl.textContent = FAVORITES_COPY.dialogBody;
@@ -846,9 +858,10 @@
                 // Legend HTML (trackRowsHtml und roomRowsHtml werden an den Aufrufstellen aus data/buildFilterToggleUrl erzeugt)
                 const renderLegend = (formattedVersion, footerText, trackRowsHtml, roomRowsHtml) => `
         <div class="legend-wrapper">
-        <div class="time-range legend-title">
-                <div style="grid-column: 1 / -1; text-align: left;">Zeichenerklärung/Explanations/Legende</div>
-        </div>
+        <button type="button" class="time-range legend-title legend-toggle" id="legend-toggle" aria-expanded="false" aria-controls="legend-panel">
+                <span class="legend-toggle-label" style="grid-column: 1 / -1; text-align: left;">Zeichenerklärung/Explanations/Legende</span>
+        </button>
+        <div id="legend-panel" class="legend-panel">
         <div class="legend-section">
                 <div class="legend-group">
                         <h4>Events im Hauptverkehr/Main stage events/trains grandes lignes</h4>
@@ -932,6 +945,7 @@
 
                         ${footerText}
                 </div>
+        </div>
         </div>
         </div>`;
 
@@ -1497,6 +1511,7 @@
 
                     requestAnimationFrame(() => {
                         updateScheduleStickyStackOffset();
+                        syncLegendToggleState();
                     });
 
                     if (disableLinkUnderline) {
@@ -1519,6 +1534,15 @@
                 };
 
                 departureTableContent.addEventListener('click', (e) => {
+                    const legBtn = e.target.closest('.legend-toggle');
+                    if (legBtn && departureTable.contains(legBtn) && document.body.classList.contains('mobile-columns')) {
+                        const wrap = legBtn.closest('.legend-wrapper');
+                        if (wrap) {
+                            wrap.classList.toggle('legend-expanded');
+                            legBtn.setAttribute('aria-expanded', wrap.classList.contains('legend-expanded') ? 'true' : 'false');
+                        }
+                        return;
+                    }
                     const btn = e.target.closest('.fav-toggle');
                     if (!btn || !departureTable.contains(btn)) return;
                     const id = Number(btn.dataset.talkId);

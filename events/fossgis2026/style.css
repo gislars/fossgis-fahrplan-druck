@@ -273,6 +273,46 @@ body.mobile-columns .legend-title {
     font-size: 15px;
 }
 
+/* Mobile: Legende standardmäßig eingeklappt; Kopfzeile toggelt */
+body.mobile-columns .legend-wrapper:not(.legend-expanded) .legend-panel {
+    display: none;
+}
+
+body:not(.mobile-columns) .legend-panel {
+    display: block;
+}
+
+body:not(.mobile-columns) .legend-toggle {
+    cursor: default;
+    pointer-events: none;
+}
+
+@media print {
+    body.mobile-columns .legend-panel {
+        display: block !important;
+    }
+}
+
+.legend-toggle {
+    border: none;
+    padding: 0;
+    margin: 0;
+    font: inherit;
+    font-weight: inherit;
+    letter-spacing: inherit;
+    background: #000;
+    color: inherit;
+    width: 100%;
+    box-sizing: border-box;
+    -webkit-appearance: none;
+    appearance: none;
+    text-align: left;
+}
+
+body.mobile-columns .legend-toggle {
+    cursor: pointer;
+}
+
 body.mobile-columns .legend-section {
     font-size: 13px;
 }
@@ -468,6 +508,35 @@ body.mobile-columns .schedule-desktop-title {
     -moz-column-break-inside: avoid;
     column-break-inside: avoid;
     break-inside: avoid;
+}
+
+/*
+ * Mehrspalten-Desktop: Tage dürfen zwischen Zeilen umbrechen, damit die Spalten
+ * besser gefüllt werden (sonst springt ein ganzer Tag in die nächste Spalte).
+ * Zeilen bleiben dank .departure-row { break-inside: avoid } ganz.
+ */
+body:not(.mobile-columns) .day-group {
+    -webkit-column-break-inside: auto;
+    -moz-column-break-inside: auto;
+    column-break-inside: auto;
+    break-inside: auto;
+}
+
+body:not(.mobile-columns) .day-group > .time-range {
+    break-after: avoid;
+    page-break-after: avoid;
+}
+
+body:not(.mobile-columns) .time-range-group {
+    -webkit-column-break-inside: auto;
+    -moz-column-break-inside: auto;
+    column-break-inside: auto;
+    break-inside: auto;
+}
+
+body:not(.mobile-columns) .time-range-group > .time-range {
+    break-after: avoid;
+    page-break-after: avoid;
 }
 
 .legend-wrapper {
