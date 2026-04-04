@@ -1078,6 +1078,53 @@ body.tinted-background .schedule-toolbar button:hover:not(:disabled) {
     }
 }
 
+/* Mobile: „Jetzt“-Button und Live-Balken in der Zeitzelle (nur Screen, nicht Druck) */
+body.mobile-columns .mobile-jetzt-btn {
+    position: fixed;
+    z-index: 25;
+    bottom: max(1rem, env(safe-area-inset-bottom, 0px));
+    right: max(1rem, env(safe-area-inset-right, 0px));
+    font: inherit;
+    font-weight: 700;
+    font-size: clamp(0.95rem, 3.8vw, 1.1rem);
+    padding: 0.5rem 0.9rem;
+    border: 2px solid #000;
+    border-radius: 4px;
+    background: var(--tinted-background-color);
+    color: #000;
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
+}
+
+body.mobile-columns:not(.tinted-background) .mobile-jetzt-btn {
+    background: #fff;
+}
+
+body.mobile-columns .mobile-jetzt-btn:hover {
+    filter: brightness(0.97);
+}
+
+body.mobile-columns .mobile-jetzt-btn:focus-visible {
+    outline: 2px solid var(--accent-color);
+    outline-offset: 2px;
+}
+
+body.mobile-columns .departure-row--live > .time {
+    box-shadow: inset 5px 0 0 0 var(--accent-color);
+}
+
+.mobile-live-sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
 .share-url-warn {
     font-size: 12px;
     color: #a33;
@@ -1194,8 +1241,14 @@ body.tinted-background .clear-favorites-dialog .toolbar-btn:hover:not(:disabled)
     .share-error-banner,
     .schedule-status-sr,
     .share-url-warn,
-    .clear-favorites-dialog {
+    .clear-favorites-dialog,
+    .mobile-jetzt-btn,
+    .mobile-live-sr-only {
         display: none !important;
+    }
+
+    body.mobile-columns .departure-row--live > .time {
+        box-shadow: none !important;
     }
     /* Favorite star: screen interaction only */
     .time-with-fav .fav-toggle {

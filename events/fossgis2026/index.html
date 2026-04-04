@@ -502,6 +502,19 @@
                     return isNaN(mins) ? 9999 : (mins < 360 ? mins + (24 * 60) : mins);
                 };
 
+                /** Slot-Start/Ende (ms, lokal) für Live-Balken und „Jetzt“-Scroll; nur in `columns=mobile` genutzt. */
+                const buildSlotDataAttrs = (row) => {
+                    if (!row.dayDate || !row.start) return '';
+                    const durMin = toMinutes(row.duration);
+                    const startMin = toMinutes(row.start);
+                    if (!Number.isFinite(durMin) || !Number.isFinite(startMin)) return '';
+                    const [y, m, d] = row.dayDate.split('-').map(Number);
+                    if (!y || !m || !d) return '';
+                    const startMs = new Date(y, m - 1, d, Math.floor(startMin / 60) % 24, startMin % 60, 0, 0).getTime();
+                    const endMs = startMs + durMin * 60000;
+                    return ` data-slot-start="${startMs}" data-slot-end="${endMs}"`;
+                };
+
                 const isoToHHMM = (isoString) => {
                     if (!isoString) return '';
                     const date = new Date(isoString);
@@ -790,7 +803,7 @@
                     const favLabel = isFav ? 'Favorit entfernen' : 'Als Favorit markieren';
 
                     return `
-            <div class="departure-row">
+            <div class="departure-row"${buildSlotDataAttrs(row)}>
                 <div class="time time-with-fav">
                     <span class="time-text">${row.start}</span>
                     <button type="button" class="fav-toggle" data-talk-id="${row.id}" aria-pressed="${isFav}" aria-label="${favLabel}">
@@ -828,7 +841,7 @@
                     const cameraIcon = hasGroupPhoto ? '&#8239;<i data-lucide="camera"></i>' : '';
 
                     return `
-            <div class="departure-row break-row">
+            <div class="departure-row break-row"${buildSlotDataAttrs(row)}>
                 <div class="time">${row.start}</div>
                 <div class="trains">
                     <div class="train-number${trainClass}"><span class="train-prefix">${breakPrefix}</span>&#8239;<span class="train-num${longNumClass}">${trainId}</span></div>
@@ -1296,6 +1309,121 @@
                     }
                 };
 
+                const MOBILE_JETZT_INTERVAL_MS = 60000;
+                let mobileJetztBtnEl = null;
+                let mobileJetztIntervalId = null;
+                let mobileJetztFeatureActive = false;
+                let mobileJetztVisibilityBound = false;
+
+                const clearMobileJetztInterval = () => {
+                    if (mobileJetztIntervalId !== null) {
+                        window.clearInterval(mobileJetztIntervalId);
+                        mobileJetztIntervalId = null;
+                    }
+                };
+
+                const updateScheduleLiveState = () => {
+                    if (!isMobileColumns || !departureTableContent) return;
+                    /* Zuerst alle Live-Zustände entfernen (verhindert hängende Markierung) */
+                    departureTableContent.querySelectorAll('.departure-row[data-slot-start]').forEach((rowEl) => {
+                        rowEl.classList.remove('departure-row--live');
+                        const timeEl = rowEl.querySelector('.time');
+                        if (timeEl) {
+                            timeEl.querySelectorAll('.mobile-live-sr-only').forEach((n) => n.remove());
+                            timeEl.removeAttribute('aria-label');
+                        }
+                    });
+                    const now = Date.now();
+                    departureTableContent.querySelectorAll('.departure-row[data-slot-start]').forEach((rowEl) => {
+                        const s = Number(rowEl.dataset.slotStart);
+                        const e = Number(rowEl.dataset.slotEnd);
+                        const live = Number.isFinite(s) && Number.isFinite(e) && now >= s && now < e;
+                        if (!live) return;
+                        rowEl.classList.add('departure-row--live');
+                        const timeEl = rowEl.querySelector('.time');
+                        if (!timeEl) return;
+                        const span = document.createElement('span');
+                        span.className = 'mobile-live-sr-only';
+                        span.textContent = 'läuft gerade. ';
+                        timeEl.insertBefore(span, timeEl.firstChild);
+                        timeEl.setAttribute('aria-label', 'läuft gerade');
+                    });
+                };
+
+                const scrollToScheduleNow = () => {
+                    if (!isMobileColumns || !departureTableContent) return;
+                    const rows = [...departureTableContent.querySelectorAll('.departure-row[data-slot-start]')];
+                    if (!rows.length) return;
+                    const now = Date.now();
+                    let target = rows.find((r) => {
+                        const s = Number(r.dataset.slotStart);
+                        const e = Number(r.dataset.slotEnd);
+                        return Number.isFinite(s) && Number.isFinite(e) && now >= s && now < e;
+                    });
+                    if (!target) {
+                        target = rows.find((r) => Number(r.dataset.slotStart) > now);
+                    }
+                    if (!target) target = rows[rows.length - 1];
+                    target.scrollIntoView({ block: 'start', behavior: 'smooth' });
+                };
+
+                const restartMobileJetztInterval = () => {
+                    clearMobileJetztInterval();
+                    if (!mobileJetztFeatureActive || document.visibilityState !== 'visible') return;
+                    mobileJetztIntervalId = window.setInterval(() => {
+                        if (mobileJetztFeatureActive && document.visibilityState === 'visible') {
+                            updateScheduleLiveState();
+                        }
+                    }, MOBILE_JETZT_INTERVAL_MS);
+                };
+
+                const setupMobileJetzt = (forPrint) => {
+                    clearMobileJetztInterval();
+                    mobileJetztFeatureActive = false;
+                    if (!isMobileColumns || forPrint) {
+                        if (mobileJetztBtnEl) {
+                            mobileJetztBtnEl.remove();
+                            mobileJetztBtnEl = null;
+                        }
+                        if (departureTableContent) {
+                            departureTableContent.querySelectorAll('.departure-row--live').forEach((el) => {
+                                el.classList.remove('departure-row--live');
+                                const te = el.querySelector('.time');
+                                if (te) {
+                                    te.querySelectorAll('.mobile-live-sr-only').forEach((n) => n.remove());
+                                    te.removeAttribute('aria-label');
+                                }
+                            });
+                        }
+                        return;
+                    }
+                    mobileJetztFeatureActive = true;
+                    if (!mobileJetztBtnEl) {
+                        mobileJetztBtnEl = document.createElement('button');
+                        mobileJetztBtnEl.type = 'button';
+                        mobileJetztBtnEl.id = 'mobile-jetzt-btn';
+                        mobileJetztBtnEl.className = 'mobile-jetzt-btn';
+                        mobileJetztBtnEl.textContent = 'Jetzt';
+                        mobileJetztBtnEl.setAttribute('aria-label', 'Zur aktuellen Zeit im Fahrplan springen');
+                        document.body.appendChild(mobileJetztBtnEl);
+                        mobileJetztBtnEl.addEventListener('click', scrollToScheduleNow);
+                    }
+                    if (!mobileJetztVisibilityBound) {
+                        mobileJetztVisibilityBound = true;
+                        document.addEventListener('visibilitychange', () => {
+                            if (!isMobileColumns) return;
+                            if (document.visibilityState === 'hidden') {
+                                clearMobileJetztInterval();
+                            } else {
+                                updateScheduleLiveState();
+                                restartMobileJetztInterval();
+                            }
+                        });
+                    }
+                    updateScheduleLiveState();
+                    restartMobileJetztInterval();
+                };
+
                 const applyUrlState = (opts = {}) => {
                     const forPrint = opts.forPrint === true;
                     const favFocusTalkId = pendingFocusFavTalkId;
@@ -1364,6 +1492,7 @@
                     if (viewMode === VIEW_SHARE_ERROR) {
                         departureTableContent.innerHTML = '';
                         if (window.lucide) window.lucide.createIcons();
+                        setupMobileJetzt(forPrint);
                         requestAnimationFrame(() => updateScheduleStickyStackOffset());
                         return;
                     }
@@ -1380,6 +1509,7 @@
                         departureTableContent.innerHTML =
                             '<div class="favorites-empty" role="status">' + escapeHtml(FAVORITES_COPY.emptyState) + '</div>';
                         if (window.lucide) window.lucide.createIcons();
+                        setupMobileJetzt(forPrint);
                         requestAnimationFrame(() => updateScheduleStickyStackOffset());
                         return;
                     }
@@ -1414,7 +1544,10 @@
                                 <div></div>
                         </div>`;
                             const rowsHTML = dayRows.map((row) => renderRow(row)).join('');
-                            departureTableContent.insertAdjacentHTML('beforeend', `<div class="day-group">${dayHeaderHTML}${rowsHTML}</div>`);
+                            departureTableContent.insertAdjacentHTML(
+                                'beforeend',
+                                `<div class="day-group" id="fossgis-day-${dayIndex}">${dayHeaderHTML}${rowsHTML}</div>`
+                            );
                         });
 
                         const { trackRowsHtml, roomRowsHtml } = buildLegendFilterHtml(data);
@@ -1500,6 +1633,7 @@
                         if (!isSingleDay) runMultiDay();
                         else if (runSingleDay() === false) {
                             if (window.lucide) window.lucide.createIcons();
+                            setupMobileJetzt(forPrint);
                             requestAnimationFrame(() => updateScheduleStickyStackOffset());
                             return;
                         }
@@ -1508,6 +1642,8 @@
                     }
 
                     if (window.lucide) window.lucide.createIcons();
+
+                    setupMobileJetzt(forPrint);
 
                     requestAnimationFrame(() => {
                         updateScheduleStickyStackOffset();
