@@ -110,8 +110,9 @@
     --cell-padding: 2px 3px;
     --columns: 4;
     --page-width: 841mm;
-    --grid-cols-header: 56px 85px 1.4fr 50px;
-    --grid-cols-content: 56px 85px 1.4fr 50px;
+    /* minmax(0, …): fr-Spalte darf schrumpfen, sonst bläht langer Text in der Richtung-Zelle das Raster auf */
+    --grid-cols-header: 56px 85px minmax(0, 1.4fr) 50px;
+    --grid-cols-content: 56px 85px minmax(0, 1.4fr) 50px;
 }
 
 body {
@@ -301,6 +302,7 @@ noscript {
 .column-headers > div {
     padding-left: 3px;
     padding-right: 3px;
+    min-width: 0;
 }
 
 .column-headers-wrapper {
@@ -341,6 +343,10 @@ noscript {
     margin-top: 0;
     margin-bottom: 0;
     break-inside: avoid;
+}
+
+.time-range > * {
+    min-width: 0;
 }
 
 .time-range a {
@@ -559,6 +565,10 @@ noscript {
     -webkit-column-break-inside: avoid;
 }
 
+.departure-row > * {
+    min-width: 0;
+}
+
 .time {
     font-size: 18px;
     font-weight: bold;
@@ -585,6 +595,11 @@ noscript {
 .route,
 .row-number {
     padding: var(--cell-padding);
+}
+
+.route {
+    overflow-wrap: break-word;
+    word-wrap: break-word;
 }
 
 .trains {
