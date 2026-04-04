@@ -194,6 +194,62 @@ body.mobile-columns .schedule-container {
     max-width: 100%;
 }
 
+/* Tabellenbereich: kleinere Schrift nur in der Mobile-Ansicht (columns=mobile) */
+body.mobile-columns .column-headers {
+    font-size: 11px;
+}
+
+body.mobile-columns .time-range {
+    font-size: 14px;
+}
+
+body.mobile-columns .time {
+    font-size: 15px;
+}
+
+body.mobile-columns .destination {
+    font-size: 15px;
+}
+
+body.mobile-columns .train-number {
+    font-size: 14px;
+}
+
+body.mobile-columns .station,
+body.mobile-columns .station-time {
+    font-size: 13px;
+}
+
+body.mobile-columns .room-name {
+    font-size: 9px;
+}
+
+body.mobile-columns .row-number {
+    font-size: 14px;
+}
+
+body.mobile-columns .no-video-icon,
+body.mobile-columns .bike-icon {
+    font-size: 11px;
+}
+
+body.mobile-columns .time-with-fav .fav-toggle {
+    font-size: 12px;
+}
+
+body.mobile-columns .legend-title {
+    font-size: 15px;
+}
+
+body.mobile-columns .legend-section {
+    font-size: 13px;
+}
+
+body.mobile-columns .no-data,
+body.mobile-columns .loading {
+    font-size: 15px;
+}
+
 body.tinted-background {
     background-color: var(--tinted-background-color);
 }
@@ -785,7 +841,20 @@ body.mobile-columns .schedule-toolbar button {
 }
 
 body.mobile-columns .schedule-toolbar button.toolbar-btn--compact {
-    min-height: 2.5rem;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.2rem;
+    padding-top: 0.4rem;
+    padding-bottom: 0.4rem;
+    min-height: 2.85rem;
+}
+
+body.mobile-columns .schedule-toolbar button.toolbar-btn--compact .toolbar-btn-text {
+    white-space: normal;
+    text-align: center;
+    line-height: 1.1;
+    max-width: 100%;
 }
 
 .schedule-toolbar button {
@@ -879,13 +948,6 @@ body.tinted-background .schedule-toolbar button:hover:not(:disabled) {
         gap: 4px;
     }
 
-    body.mobile-columns .column-headers > div:nth-child(2) {
-        font-size: 9px;
-        line-height: 1.12;
-        text-align: center;
-        align-self: center;
-    }
-
     body.mobile-columns .trains {
         align-items: center;
         justify-content: flex-start;
@@ -893,7 +955,7 @@ body.tinted-background .schedule-toolbar button:hover:not(:disabled) {
     }
 
     body.mobile-columns .train-number {
-        font-size: 12px;
+        font-size: 11px;
         line-height: 1.2;
         overflow-wrap: anywhere;
         word-break: break-word;
@@ -901,7 +963,7 @@ body.tinted-background .schedule-toolbar button:hover:not(:disabled) {
     }
 
     body.mobile-columns .no-video-icon {
-        font-size: 11px;
+        font-size: 10px;
     }
 }
 
