@@ -110,8 +110,9 @@
     --cell-padding: 2px 3px;
     --columns: 4;
     --page-width: 841mm;
-    --grid-cols-header: 56px 85px 1.4fr 50px;
-    --grid-cols-content: 56px 85px 1.4fr 50px;
+    /* minmax(0, …): fr-Spalte darf schrumpfen, sonst bläht langer Text in der Richtung-Zelle das Raster auf */
+    --grid-cols-header: 56px 85px minmax(0, 1.4fr) 50px;
+    --grid-cols-content: 56px 85px minmax(0, 1.4fr) 50px;
 }
 
 body {
@@ -124,8 +125,201 @@ body {
 }
 
 body.mobile-columns {
-    width: 100vw;
+    width: 100%;
+    max-width: 100%;
     padding: 16px;
+    box-sizing: border-box;
+}
+
+body.mobile-columns .header {
+    font-size: clamp(1.125rem, 4.2vw, 2.25rem);
+    flex-wrap: nowrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    margin-bottom: 0.35rem;
+}
+
+body.mobile-columns .header-left {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+body.mobile-columns .title-section {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.75rem;
+    margin-bottom: 1.25rem;
+    width: 100%;
+}
+
+body.mobile-columns .title-left {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.45rem;
+    min-width: 0;
+    width: 100%;
+    max-width: 100%;
+}
+
+body.mobile-columns .title-label {
+    flex-wrap: wrap;
+    row-gap: 0.2em;
+    column-gap: 0.45rem;
+    font-size: clamp(1rem, 4vw, 2.25rem);
+    max-width: 100%;
+}
+
+body.mobile-columns .station-name {
+    font-size: clamp(1.05rem, 4.1vw, 2.25rem);
+    overflow-wrap: anywhere;
+    word-break: break-word;
+    width: 100%;
+    max-width: 100%;
+}
+
+body.mobile-columns .header .fg26-logo {
+    width: min(200px, 42vw);
+    max-width: 200px;
+    min-width: 0;
+    flex-shrink: 0;
+    height: 2.35rem;
+    min-height: 2.35rem;
+    background-position: right center;
+}
+
+body.mobile-columns .title-departure-line {
+    margin-bottom: 0.65rem;
+}
+
+body.mobile-columns .schedule-container {
+    min-width: 0;
+    max-width: 100%;
+    overflow-x: clip;
+}
+
+/* Konferenztitel, Toolbar, Tabellenkopf: beim vertikalen Scrollen sichtbar bleiben */
+body.mobile-columns .schedule-mobile-sticky-head {
+    position: sticky;
+    top: env(safe-area-inset-top, 0);
+    z-index: 8;
+    background-color: var(--tinted-background-color);
+    padding-bottom: 0.35rem;
+    margin-bottom: 0.25rem;
+    box-shadow: 0 1px 0 rgba(0, 0, 0, 0.12);
+}
+
+body.mobile-columns:not(.tinted-background) .schedule-mobile-sticky-head {
+    background-color: #fff;
+}
+
+body.mobile-columns .schedule-mobile-sticky-head .schedule-mobile-only-station {
+    margin-bottom: 0.85rem;
+}
+
+/* Tages- und Zeitfenster-Baender: unter dem Haupt-Sticky kleben (nur columns=mobile / eine Spalte) */
+body.mobile-columns .day-group > .time-range,
+body.mobile-columns .time-range-group > .time-range {
+    position: sticky;
+    top: calc(env(safe-area-inset-top, 0px) + var(--schedule-sticky-stack-offset, 120px));
+    z-index: 5;
+    box-shadow: 0 1px 0 rgba(0, 0, 0, 0.22);
+}
+
+/* Tabellenbereich: kleinere Schrift nur in der Mobile-Ansicht (columns=mobile) */
+body.mobile-columns .column-headers {
+    font-size: 11px;
+}
+
+body.mobile-columns .time-range {
+    font-size: 14px;
+}
+
+body.mobile-columns .time {
+    font-size: 15px;
+}
+
+body.mobile-columns .destination {
+    font-size: 15px;
+}
+
+body.mobile-columns .train-number {
+    font-size: 14px;
+}
+
+body.mobile-columns .station,
+body.mobile-columns .station-time {
+    font-size: 13px;
+}
+
+body.mobile-columns .room-name {
+    font-size: 9px;
+}
+
+body.mobile-columns .row-number {
+    font-size: 14px;
+}
+
+body.mobile-columns .no-video-icon,
+body.mobile-columns .bike-icon {
+    font-size: 11px;
+}
+
+body.mobile-columns .time-with-fav .fav-toggle {
+    font-size: 12px;
+}
+
+body.mobile-columns .legend-title {
+    font-size: 15px;
+}
+
+/* Mobile: Legende standardmäßig eingeklappt; Kopfzeile toggelt */
+body.mobile-columns .legend-wrapper:not(.legend-expanded) .legend-panel {
+    display: none;
+}
+
+body:not(.mobile-columns) .legend-panel {
+    display: block;
+}
+
+body:not(.mobile-columns) .legend-toggle {
+    cursor: default;
+    pointer-events: none;
+}
+
+@media print {
+    body.mobile-columns .legend-panel {
+        display: block !important;
+    }
+}
+
+.legend-toggle {
+    border: none;
+    padding: 0;
+    margin: 0;
+    font: inherit;
+    font-weight: inherit;
+    letter-spacing: inherit;
+    background: #000;
+    color: inherit;
+    width: 100%;
+    box-sizing: border-box;
+    -webkit-appearance: none;
+    appearance: none;
+    text-align: left;
+}
+
+body.mobile-columns .legend-toggle {
+    cursor: pointer;
+}
+
+body.mobile-columns .legend-section {
+    font-size: 13px;
+}
+
+body.mobile-columns .no-data,
+body.mobile-columns .loading {
+    font-size: 15px;
 }
 
 body.tinted-background {
@@ -144,6 +338,16 @@ noscript {
     width: 100%;
     height: auto;
     margin: 0;
+}
+
+/* Mobile: geteilte Titelzeile + Sticky; Desktop: klassische eine title-section (schedule-desktop-title) */
+body:not(.mobile-columns) .title-departure-line,
+body:not(.mobile-columns) .schedule-mobile-only-station {
+    display: none;
+}
+
+body.mobile-columns .schedule-desktop-title {
+    display: none;
 }
 
 .header {
@@ -236,6 +440,7 @@ noscript {
 .column-headers > div {
     padding-left: 3px;
     padding-right: 3px;
+    min-width: 0;
 }
 
 .column-headers-wrapper {
@@ -278,6 +483,10 @@ noscript {
     break-inside: avoid;
 }
 
+.time-range > * {
+    min-width: 0;
+}
+
 .time-range a {
     color: var(--column-headers-bg-color);
     text-decoration: none;
@@ -299,6 +508,35 @@ noscript {
     -moz-column-break-inside: avoid;
     column-break-inside: avoid;
     break-inside: avoid;
+}
+
+/*
+ * Mehrspalten-Desktop: Tage dürfen zwischen Zeilen umbrechen, damit die Spalten
+ * besser gefüllt werden (sonst springt ein ganzer Tag in die nächste Spalte).
+ * Zeilen bleiben dank .departure-row { break-inside: avoid } ganz.
+ */
+body:not(.mobile-columns) .day-group {
+    -webkit-column-break-inside: auto;
+    -moz-column-break-inside: auto;
+    column-break-inside: auto;
+    break-inside: auto;
+}
+
+body:not(.mobile-columns) .day-group > .time-range {
+    break-after: avoid;
+    page-break-after: avoid;
+}
+
+body:not(.mobile-columns) .time-range-group {
+    -webkit-column-break-inside: auto;
+    -moz-column-break-inside: auto;
+    column-break-inside: auto;
+    break-inside: auto;
+}
+
+body:not(.mobile-columns) .time-range-group > .time-range {
+    break-after: avoid;
+    page-break-after: avoid;
 }
 
 .legend-wrapper {
@@ -494,6 +732,10 @@ noscript {
     -webkit-column-break-inside: avoid;
 }
 
+.departure-row > * {
+    min-width: 0;
+}
+
 .time {
     font-size: 18px;
     font-weight: bold;
@@ -502,10 +744,29 @@ noscript {
     padding: var(--cell-padding);
 }
 
+.time-with-fav {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 4px;
+}
+
+.time-with-fav .time-text {
+    display: block;
+    width: 100%;
+    text-align: center;
+}
+
 .trains,
 .route,
 .row-number {
     padding: var(--cell-padding);
+}
+
+.route {
+    overflow-wrap: break-word;
+    word-wrap: break-word;
 }
 
 .trains {
@@ -618,4 +879,342 @@ a.no-video-icon:hover {
     height: 0.9em;
     stroke-width: 2px;
     flex-shrink: 0;
+}
+
+/* Favorite toggle: no border; inactive outline only, active fill/stroke in accent */
+.time-with-fav .fav-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 32px;
+    min-height: 32px;
+    padding: 4px;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    font-size: 14px;
+    line-height: 1;
+    border-radius: 2px;
+    flex-shrink: 0;
+    box-shadow: none;
+}
+
+.time-with-fav .fav-toggle:hover {
+    background: rgba(0, 0, 0, 0.06);
+}
+
+.time-with-fav .fav-toggle:focus-visible {
+    outline: 2px solid var(--accent-color);
+    outline-offset: 2px;
+}
+
+.time-with-fav .fav-toggle [data-lucide] {
+    width: 1.15em;
+    height: 1.15em;
+    stroke-width: 2px;
+}
+
+.time-with-fav .fav-toggle:not([aria-pressed="true"]) [data-lucide] {
+    stroke: rgba(0, 0, 0, 0.55);
+    fill: none;
+    color: rgba(0, 0, 0, 0.55);
+}
+
+.time-with-fav .fav-toggle[aria-pressed="true"] [data-lucide] {
+    stroke: var(--accent-color);
+    fill: var(--accent-color);
+    color: var(--accent-color);
+}
+
+.schedule-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.45rem 0.55rem;
+    margin-bottom: 0.45rem;
+    padding: 0.35rem 0;
+}
+
+body.mobile-columns .schedule-toolbar {
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: stretch;
+    gap: 0.3rem 0.35rem;
+    justify-content: stretch;
+}
+
+body.mobile-columns .schedule-toolbar button {
+    flex: 1 1 0;
+    min-width: 0;
+    padding-left: 0.3em;
+    padding-right: 0.3em;
+    font-size: 11px;
+}
+
+body.mobile-columns .schedule-toolbar button.toolbar-btn--compact {
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.2rem;
+    padding-top: 0.4rem;
+    padding-bottom: 0.4rem;
+    min-height: 2.85rem;
+}
+
+body.mobile-columns .schedule-toolbar button.toolbar-btn--compact .toolbar-btn-text {
+    white-space: normal;
+    text-align: center;
+    line-height: 1.1;
+    max-width: 100%;
+}
+
+.schedule-toolbar button {
+    box-sizing: border-box;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 500;
+    line-height: 1.2;
+    padding: 0.35em 0.5em;
+    cursor: pointer;
+    color: #000;
+    border: 1px solid #000;
+    background: var(--tinted-background-color);
+}
+
+body:not(.tinted-background) .schedule-toolbar button {
+    background: #fff;
+}
+
+body.tinted-background .schedule-toolbar button:hover:not(:disabled) {
+    filter: brightness(0.92);
+}
+
+/* Kompakte Icon+Text-Buttons; ausreichende Klickfläche für Touch */
+.schedule-toolbar button.toolbar-btn--compact {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.35em;
+    min-height: 2.75rem;
+    max-width: 100%;
+}
+
+.schedule-toolbar .toolbar-btn-icon {
+    display: inline-flex;
+    flex-shrink: 0;
+    width: 1.05em;
+    height: 1.05em;
+}
+
+.schedule-toolbar .toolbar-btn-icon svg {
+    width: 100%;
+    height: 100%;
+}
+
+.schedule-toolbar .toolbar-btn-text {
+    white-space: nowrap;
+}
+
+.schedule-toolbar .toolbar-share-link {
+    text-align: center;
+}
+
+.schedule-toolbar button:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
+
+@media (max-width: 520px) {
+    .schedule-toolbar {
+        gap: 0.35rem 0.4rem;
+    }
+
+    body.mobile-columns .schedule-toolbar {
+        gap: 0.35rem 0.4rem;
+    }
+
+    .schedule-toolbar button {
+        font-size: 12px;
+        padding: 0.3em 0.45em;
+    }
+}
+
+/*
+ * Sehr schmale Displays (Smartphone hochkant): Zug-Spalte hat wenig Inhalt,
+ * Richtung braucht Flaeche. Engere zweite Spalte, mehr minmax(0, …) fuer Richtung,
+ * Zeilenumbruch in der Zug-Zelle statt breiter Mindestbreite.
+ */
+@media (max-width: 480px) {
+    body.mobile-columns {
+        --grid-cols-header: 52px minmax(0, 2.5rem) minmax(0, 2fr) 42px;
+        --grid-cols-content: 52px minmax(0, 2.5rem) minmax(0, 2fr) 42px;
+    }
+
+    body.mobile-columns .column-headers,
+    body.mobile-columns .departure-row {
+        column-gap: 4px;
+    }
+
+    body.mobile-columns .time-range {
+        gap: 4px;
+    }
+
+    body.mobile-columns .trains {
+        align-items: center;
+        justify-content: flex-start;
+        text-align: center;
+    }
+
+    body.mobile-columns .train-number {
+        font-size: 11px;
+        line-height: 1.2;
+        overflow-wrap: anywhere;
+        word-break: break-word;
+        max-width: 100%;
+    }
+
+    body.mobile-columns .no-video-icon {
+        font-size: 10px;
+    }
+}
+
+.share-url-warn {
+    font-size: 12px;
+    color: #a33;
+    margin: 0.25rem 0 0;
+    width: 100%;
+}
+
+.clear-favorites-dialog {
+    max-width: min(100vw - 2rem, 28rem);
+    padding: 1rem 1.1rem;
+    border: 2px solid #000;
+    background: var(--tinted-background-color);
+    font-family: inherit;
+}
+
+body:not(.tinted-background) .clear-favorites-dialog {
+    background: #fff;
+}
+
+.clear-favorites-dialog::backdrop {
+    background: rgba(0, 0, 0, 0.35);
+}
+
+.clear-favorites-dialog h2 {
+    font-size: 1.05rem;
+    font-weight: 600;
+    margin: 0 0 0.5rem;
+}
+
+.clear-favorites-dialog-text {
+    font-size: 0.9rem;
+    line-height: 1.35;
+    margin: 0 0 1rem;
+}
+
+.clear-favorites-dialog-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    justify-content: flex-end;
+}
+
+.clear-favorites-dialog .toolbar-btn {
+    min-height: 2.5rem;
+    background: var(--tinted-background-color);
+    border: 1px solid #000;
+    color: #000;
+}
+
+body:not(.tinted-background) .clear-favorites-dialog .toolbar-btn {
+    background: #fff;
+}
+
+body.tinted-background .clear-favorites-dialog .toolbar-btn:hover:not(:disabled) {
+    filter: brightness(0.92);
+}
+
+.favorites-empty {
+    padding: 16px;
+    font-size: 16px;
+    color: #333;
+}
+
+.share-banner-region {
+    border: 1px solid #000;
+    padding: 0.45rem 0.65rem;
+    margin-bottom: 0.45rem;
+    background: #fff;
+}
+
+.share-banner-region h2 {
+    font-size: 16px;
+    font-weight: 700;
+    margin-bottom: 0.25em;
+}
+
+.share-banner-region p {
+    font-size: 13px;
+    line-height: 1.35;
+}
+
+.share-error-banner {
+    border: 2px solid #a00;
+    padding: 0.45rem 0.65rem;
+    margin-bottom: 0.45rem;
+    background: #fff8f8;
+    font-size: 14px;
+}
+
+.schedule-status-sr {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+@media print {
+    .schedule-desktop-title {
+        display: block !important;
+    }
+
+    .title-departure-line,
+    .schedule-mobile-only-station {
+        display: none !important;
+    }
+
+    .schedule-toolbar,
+    .share-banner-region,
+    .share-error-banner,
+    .schedule-status-sr,
+    .share-url-warn,
+    .clear-favorites-dialog {
+        display: none !important;
+    }
+    /* Favorite star: screen interaction only */
+    .time-with-fav .fav-toggle {
+        display: none !important;
+    }
+    .schedule-mobile-sticky-head {
+        position: static !important;
+        top: auto !important;
+        z-index: auto !important;
+        box-shadow: none !important;
+        padding-bottom: 0 !important;
+        margin-bottom: 0 !important;
+    }
+
+    body.mobile-columns .day-group > .time-range,
+    body.mobile-columns .time-range-group > .time-range {
+        position: static !important;
+        top: auto !important;
+        z-index: auto !important;
+        box-shadow: none !important;
+    }
 }

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="de">
 
 <head>
     <meta charset="UTF-8">
@@ -15,26 +15,44 @@
         <!-- Header -->
         <div class="header">
             <div class="header-left">24.03.2026 – 28.03.2026</div>
-        </div>
-
-        <!-- Title Section -->
-        <div class="title-section">
-            <div class="title-left">
-                <div class="title-label">
-                    <span class="title-label-bold">Abfahrt</span>
-                    <span class="title-label-italic">Departure</span>
-                    <span class="title-label-italic">Départ</span>
-                </div>
-                <div class="station-name">FOSSGIS Konferenz 2026</div>
-            </div>
             <div class="fg26-logo" role="img" aria-label="FOSSGIS e.V."></div>
         </div>
+
+        <div class="schedule-desktop-title">
+            <div class="title-section">
+                <div class="title-left">
+                    <div class="title-label">
+                        <span class="title-label-bold">Abfahrt</span>
+                        <span class="title-label-italic">Departure</span>
+                        <span class="title-label-italic">Départ</span>
+                    </div>
+                    <div class="station-name">FOSSGIS Konferenz 2026</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="title-departure-line">
+            <div class="title-label">
+                <span class="title-label-bold">Abfahrt</span>
+                <span class="title-label-italic">Departure</span>
+                <span class="title-label-italic">Départ</span>
+            </div>
+        </div>
+
+        <div class="schedule-mobile-sticky-head">
+        <div class="title-section schedule-mobile-only-station">
+            <div class="title-left">
+                <div class="station-name">FOSSGIS Konferenz 2026</div>
+            </div>
+        </div>
+
+        <div id="schedule-toolbar-root" tabindex="-1"></div>
 
         <!-- Column Headers (Anzahl per URL-Parameter columns, z. B. columns=mobile) -->
         <div class="column-headers-wrapper" id="column-headers-wrapper">
             <template id="column-headers-template">
                 <div class="column-headers">
-                    <div>
+                    <div class="column-time-fav-hint">
                         <div class="column-header-bold">Zeit</div>
                         <div class="column-header-italic">Time</div>
                     </div>
@@ -53,6 +71,19 @@
                 </div>
             </template>
         </div>
+        </div>
+
+        <div id="schedule-banners-root"></div>
+        <div id="schedule-status-root" role="status" aria-live="polite" class="schedule-status-sr"></div>
+
+        <dialog id="clear-favorites-dialog" class="clear-favorites-dialog" aria-labelledby="clear-favorites-dialog-title">
+            <h2 id="clear-favorites-dialog-title">Alle Favoriten entfernen?</h2>
+            <p class="clear-favorites-dialog-text" id="clear-favorites-dialog-text"></p>
+            <div class="clear-favorites-dialog-actions">
+                <button type="button" class="toolbar-btn" id="clear-favorites-dialog-cancel" autofocus>Abbrechen</button>
+                <button type="button" class="toolbar-btn" id="clear-favorites-dialog-confirm">Alle entfernen</button>
+            </div>
+        </dialog>
 
         <!-- Departure Rows (Struktur wie Upstream: Inhalt in .departure-table-content) -->
         <div class="departure-table">
@@ -132,29 +163,47 @@
                 // today = new Date(2026, 2, 25);
                 today.setHours(0, 0, 0, 0);
 
-                // URL parameter parsing
-                const params = new URLSearchParams(location.search);
-                const onlyDayParam = params.get('only-day');
-                const onlyTrackParam = params.get('only-track');
-                const onlyRoomParam = params.get('only-room');
-                const tintedBackgroundParam = params.get('tinted-background');
-                const noLinkUnderlineParam = params.get('no-link-underline');
-                const disableLinkUnderline = noLinkUnderlineParam !== null && String(noLinkUnderlineParam).toLowerCase() !== 'false';
-                let columnsRaw = params.get('columns');
-                if (columnsRaw == null) {
-                    columnsRaw = window.matchMedia('(max-width: 768px)').matches ? 'mobile' : '4';
-                }
-                const usedViewportFallback = params.get('columns') === null && columnsRaw === 'mobile';
-                const isSingleDay = onlyDayParam !== null;
-                const selectedDay = parseInt(onlyDayParam ?? '1', 10);
+                // URL state (search params; refreshed by applyUrlState / navigation)
+                let urlState = {
+                    onlyDayParam: null,
+                    onlyTrackParam: null,
+                    onlyRoomParam: null,
+                    favoritesParam: null,
+                    tintedBackgroundParam: null,
+                    noLinkUnderlineParam: null,
+                    isSingleDay: false,
+                    selectedDay: 1,
+                };
+                let columnsRaw = '4';
+                let usedViewportFallback = false;
+
+                const refreshUrlState = () => {
+                    const params = new URLSearchParams(location.search);
+                    urlState.onlyDayParam = params.get('only-day');
+                    urlState.onlyTrackParam = params.get('only-track');
+                    urlState.onlyRoomParam = params.get('only-room');
+                    urlState.favoritesParam = params.get('favorites');
+                    urlState.tintedBackgroundParam = params.get('tinted-background');
+                    urlState.noLinkUnderlineParam = params.get('no-link-underline');
+                    urlState.isSingleDay = urlState.onlyDayParam !== null;
+                    urlState.selectedDay = parseInt(urlState.onlyDayParam ?? '1', 10);
+                    columnsRaw = params.get('columns');
+                    if (columnsRaw == null) {
+                        columnsRaw = window.matchMedia('(max-width: 768px)').matches ? 'mobile' : '4';
+                    }
+                    usedViewportFallback = params.get('columns') === null && columnsRaw === 'mobile';
+                };
+                refreshUrlState();
+
+                const disableLinkUnderline = urlState.noLinkUnderlineParam !== null && String(urlState.noLinkUnderlineParam).toLowerCase() !== 'false';
 
                 // columns: mobile = 1 Spalte + volle Breite, sonst 1–4 (Standard 4)
                 const isMobileColumns = columnsRaw.toLowerCase() === 'mobile';
                 const columnsParam = parseInt(columnsRaw, 10);
                 const columns = isMobileColumns ? 1 : (Number.isFinite(columnsParam) && columnsParam > 0 ? Math.min(columnsParam, 4) : 4);
                 document.documentElement.style.setProperty('--columns', String(columns));
-                // Bildschirmbreite: 841mm Desktop, 100vw mobil; --columns nur Spalten im Inhalt, nicht die Gesamtbreite.
-                document.documentElement.style.setProperty('--page-width', isMobileColumns ? '100vw' : '841mm');
+                // Bildschirmbreite: 841mm Desktop, 100% mobil (kein 100vw: vermeidet horizontales Scrollen durch Scrollbar-Breite)
+                document.documentElement.style.setProperty('--page-width', isMobileColumns ? '100%' : '841mm');
                 document.body.classList.toggle('mobile-columns', isMobileColumns);
 
                 if (usedViewportFallback) {
@@ -163,8 +212,8 @@
                     history.replaceState(null, '', url.toString());
                 }
 
-                // Optional: gelben Hintergrund (RAL 1003) ausschalten, z. B. für Druck auf gelbem Papier
-                if (tintedBackgroundParam === 'false') {
+                // Optional: gelben Hintergrund (RAL 1003) ausschalten
+                if (urlState.tintedBackgroundParam === 'false') {
                     document.body.classList.remove('tinted-background');
                 }
 
@@ -185,49 +234,230 @@
                     return url.search ? url.pathname + '?' + url.searchParams.toString() : url.pathname;
                 };
                 const escapeHtml = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+                const escapeAttr = (s) => String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;');
+                const replaceBrowserUrlFrom = (url) => {
+                    history.replaceState(null, '', url.pathname + (url.search ? url.search : '') + url.hash);
+                };
+
+                const EVENT_ID = 'fossgis2026';
+                const STORAGE_KEY = `fossgis-fahrplan-favorites:${EVENT_ID}`;
+                const SHARE_URL_WARN_CHARS = 8000;
+                const FAVORITES_STAR_HINT = 'Stern unter der Uhrzeit';
+                const FAVORITES_COPY = {
+                    columnTimeTitle: `Favoriten: ${FAVORITES_STAR_HINT}`,
+                    dialogBody: `Alle gespeicherten Favoriten auf diesem Gerät werden entfernt. Einzelne Termine kannst du auch mit dem ${FAVORITES_STAR_HINT} entfernen.`,
+                    filterDisabledSaveFirst: `Speichere zuerst Favoriten mit dem ${FAVORITES_STAR_HINT}.`,
+                    importSaveAllDetail: `Speichert alle Termine aus diesem Link bei dir als Favoriten. Einzelne Termine kannst du mit dem ${FAVORITES_STAR_HINT} setzen.`,
+                    clearAllDetail: `Entfernt alle gespeicherten Favoriten auf diesem Gerät. Einzelne Termine kannst du auch mit dem ${FAVORITES_STAR_HINT} entfernen.`,
+                    emptyState: `Du hast noch keine Favoriten. Markiere Programmpunkte mit dem ${FAVORITES_STAR_HINT}.`,
+                };
+
+                const VIEW_NORMAL = 'normal';
+                const VIEW_SHARE = 'share';
+                const VIEW_SHARE_ERROR = 'share_error';
+                const VIEW_OWN_FAVORITES = 'own_favorites';
+
+                // Reihenfolge: Share ok, Share fehlerhaft, ?favorites=1, sonst Normal.
+                const resolveViewModeFromShareAndFavorites = (parsedShare, favoritesParam) => {
+                    if (parsedShare.kind === 'ok') {
+                        return {
+                            viewMode: VIEW_SHARE,
+                            programFiltersActive: false,
+                            shareIdSet: parsedShare.ids,
+                            shareErrorReason: null,
+                        };
+                    }
+                    if (parsedShare.kind === 'bad') {
+                        return {
+                            viewMode: VIEW_SHARE_ERROR,
+                            programFiltersActive: false,
+                            shareIdSet: null,
+                            shareErrorReason: parsedShare.reason,
+                        };
+                    }
+                    if (favoritesParam === '1') {
+                        return {
+                            viewMode: VIEW_OWN_FAVORITES,
+                            programFiltersActive: true,
+                            shareIdSet: null,
+                            shareErrorReason: null,
+                        };
+                    }
+                    return {
+                        viewMode: VIEW_NORMAL,
+                        programFiltersActive: true,
+                        shareIdSet: null,
+                        shareErrorReason: null,
+                    };
+                };
+
+                const deriveViewMode = ({ parsedShare, favoritesParam }) =>
+                    resolveViewModeFromShareAndFavorites(parsedShare, favoritesParam);
+
+                // Share link fragment: #f=1/<id>[,<id>…] (format version 1).
+                const parseShareHash = (hash) => {
+                    if (!hash || hash === '#') return { kind: 'none' };
+                    const h = hash.startsWith('#') ? hash.slice(1) : hash;
+                    if (!h.startsWith('f=')) return { kind: 'none' };
+                    const m = /^f=(\d+)\/([\s\S]*)$/.exec(h);
+                    if (!m) return { kind: 'bad', reason: 'invalid' };
+                    const version = parseInt(m[1], 10);
+                    const rest = m[2];
+                    if (version !== 1) return { kind: 'bad', reason: 'version' };
+                    const tokens = rest.split(',').map((t) => t.trim()).filter(Boolean);
+                    const ids = [];
+                    for (const t of tokens) {
+                        if (!/^\d+$/.test(t)) return { kind: 'bad', reason: 'invalid' };
+                        ids.push(Number(t));
+                    }
+                    if (!ids.length) return { kind: 'bad', reason: 'empty' };
+                    return { kind: 'ok', ids: new Set(ids) };
+                };
+
+                const buildShareHashFromIds = (ids) => {
+                    const sorted = [...new Set(ids)].filter((x) => Number.isFinite(x)).sort((a, b) => a - b);
+                    return `#f=1/${sorted.join(',')}`;
+                };
 
                 // DOM hooks
                 const headerLeft = document.querySelector('.header-left');
-                const stationNameEl = document.querySelector('.station-name');
+                const stationNameEls = document.querySelectorAll('.station-name');
                 const columnHeadersWrapper = document.getElementById('column-headers-wrapper');
                 const columnHeadersTemplate = document.getElementById('column-headers-template');
                 const departureTable = document.querySelector('.departure-table');
                 const departureTableContent = document.querySelector('.departure-table-content');
+                const toolbarRoot = document.getElementById('schedule-toolbar-root');
+                const bannersRoot = document.getElementById('schedule-banners-root');
+                const statusRoot = document.getElementById('schedule-status-root');
                 if (!departureTable || !departureTableContent || !columnHeadersWrapper || !columnHeadersTemplate) return;
 
-                // Spaltenköpfe passend zu columns erzeugen
+                const scheduleMobileStickyHead = document.querySelector('.schedule-mobile-sticky-head');
+                const updateScheduleStickyStackOffset = () => {
+                    if (!scheduleMobileStickyHead || !document.body.classList.contains('mobile-columns')) {
+                        document.documentElement.style.removeProperty('--schedule-sticky-stack-offset');
+                        return;
+                    }
+                    const h = scheduleMobileStickyHead.getBoundingClientRect().height;
+                    document.documentElement.style.setProperty('--schedule-sticky-stack-offset', `${Math.max(0, Math.ceil(h))}px`);
+                };
+                if (scheduleMobileStickyHead && typeof ResizeObserver !== 'undefined') {
+                    const stickyHeadResizeObserver = new ResizeObserver(() => {
+                        updateScheduleStickyStackOffset();
+                    });
+                    stickyHeadResizeObserver.observe(scheduleMobileStickyHead);
+                }
+                window.addEventListener('resize', updateScheduleStickyStackOffset);
+
+                const syncLegendToggleState = () => {
+                    const wrap = departureTableContent.querySelector('.legend-wrapper');
+                    const btn = document.getElementById('legend-toggle');
+                    if (!wrap || !btn) return;
+                    const mobile = document.body.classList.contains('mobile-columns');
+                    if (mobile) {
+                        btn.setAttribute('aria-expanded', wrap.classList.contains('legend-expanded') ? 'true' : 'false');
+                    } else {
+                        btn.setAttribute('aria-expanded', 'true');
+                    }
+                };
+
+                const clearFavoritesDialogTextEl = document.getElementById('clear-favorites-dialog-text');
+                if (clearFavoritesDialogTextEl) {
+                    clearFavoritesDialogTextEl.textContent = FAVORITES_COPY.dialogBody;
+                }
+                const columnTimeFavHintEl = columnHeadersTemplate.content.querySelector('.column-time-fav-hint');
+                if (columnTimeFavHintEl) {
+                    columnTimeFavHintEl.setAttribute('title', FAVORITES_COPY.columnTimeTitle);
+                }
+
+                const clearFavoritesDialogEl = document.getElementById('clear-favorites-dialog');
+
+                // Favorites (localStorage)
+                const loadFavorites = () => {
+                    try {
+                        const raw = localStorage.getItem(STORAGE_KEY);
+                        if (!raw) return { v: 1, ids: [] };
+                        const parsed = JSON.parse(raw);
+                        const ids = Array.isArray(parsed.ids) ? parsed.ids.filter((x) => Number.isFinite(x)) : [];
+                        return { v: typeof parsed.v === 'number' ? parsed.v : 1, ids };
+                    } catch {
+                        return { v: 1, ids: [] };
+                    }
+                };
+
+                const saveFavorites = (state) => {
+                    try {
+                        localStorage.setItem(STORAGE_KEY, JSON.stringify({ v: 1, ids: [...new Set(state.ids)].sort((a, b) => a - b) }));
+                        return true;
+                    } catch {
+                        if (statusRoot) {
+                            statusRoot.textContent = 'Favoriten konnten nicht gespeichert werden (Speicher voll oder privates Fenster).';
+                            statusRoot.classList.remove('schedule-status-sr');
+                            setTimeout(() => {
+                                statusRoot.textContent = '';
+                                statusRoot.classList.add('schedule-status-sr');
+                            }, 5000);
+                        }
+                        return false;
+                    }
+                };
+
+                const toggleFavorite = (talkId) => {
+                    const cur = loadFavorites();
+                    const set = new Set(cur.ids);
+                    if (set.has(talkId)) set.delete(talkId);
+                    else set.add(talkId);
+                    return saveFavorites({ v: 1, ids: [...set] });
+                };
+
+                // Column headers: clone template once per column
                 columnHeadersWrapper.innerHTML = '';
                 for (let i = 0; i < columns; i += 1) {
                     columnHeadersWrapper.appendChild(columnHeadersTemplate.content.cloneNode(true));
                 }
 
                 if (headerLeft && headerDateRange) headerLeft.textContent = headerDateRange;
-                const filterLabelParts = [];
-                if (onlyRoomParam) filterLabelParts.push(onlyRoomParam);
+                let programFiltersActive = true;
+
+                const updateStationTitle = (filterLabelParts) => {
+                    if (!stationName || stationNameEls.length === 0) return;
+                    const titleText = filterLabelParts.length ? `${stationName} — ${filterLabelParts.join(' — ')}` : stationName;
+                    const html = `<a href="${buildResetUrl()}" title="Alle Filter zurücksetzen">${escapeHtml(titleText)}</a>`;
+                    stationNameEls.forEach((el) => {
+                        el.innerHTML = html;
+                    });
+                };
+
+                const buildFilterLabelParts = () => {
+                    const parts = [];
+                    if (urlState.onlyDayParam != null && urlState.onlyDayParam !== '') {
+                        parts.push(`Tag ${urlState.selectedDay}`);
+                    }
+                    if (urlState.onlyRoomParam) parts.push(urlState.onlyRoomParam);
                 const trackDisplay = (() => {
-                    if (!onlyTrackParam) return null;
-                    const target = onlyTrackParam.toLowerCase();
+                        if (!urlState.onlyTrackParam) return null;
+                        const target = urlState.onlyTrackParam.toLowerCase();
                     const matchFull = Object.keys(trackMap).find((name) => (name || '').toLowerCase() === target);
                     if (matchFull) return matchFull;
                     const matchCode = Object.entries(trackMap).find(([, code]) => (code || '').toLowerCase() === target);
                     if (matchCode) return matchCode[0];
-                    return onlyTrackParam;
+                        return urlState.onlyTrackParam;
                 })();
-                if (trackDisplay) filterLabelParts.push(trackDisplay);
-                if (stationNameEl && stationName) {
-                    const titleText = filterLabelParts.length ? `${stationName} — ${filterLabelParts.join(' — ')}` : stationName;
-                    stationNameEl.innerHTML = `<a href="${buildResetUrl()}" title="Alle Filter zurücksetzen">${escapeHtml(titleText)}</a>`;
-                }
+                    if (trackDisplay) parts.push(trackDisplay);
+                    return parts;
+                };
+
+                updateStationTitle(buildFilterLabelParts());
 
                 const passesFilters = (talk, roomName) => {
-                    if (onlyTrackParam) {
-                        const target = onlyTrackParam.toLowerCase();
+                    if (!programFiltersActive) return true;
+                    if (urlState.onlyTrackParam) {
+                        const target = urlState.onlyTrackParam.toLowerCase();
                         const trackRaw = (talk.track || '').toString().toLowerCase();
                         const trackCode = (trackMap[talk.track] || '').toLowerCase();
                         if (trackRaw !== target && trackCode !== target) return false;
                     }
-                    if (onlyRoomParam) {
-                        const targetRoom = onlyRoomParam.toLowerCase();
+                    if (urlState.onlyRoomParam) {
+                        const targetRoom = urlState.onlyRoomParam.toLowerCase();
                         const roomLower = roomName.toLowerCase();
                         if (roomLower !== targetRoom && !roomLower.includes(targetRoom)) return false;
                     }
@@ -451,6 +681,9 @@
                     return '<i data-lucide="coffee"></i>'; // Default fallback
                 };
 
+                let currentFavSet = new Set();
+                let pendingFocusFavTalkId = null;
+
                 const determineEventType = (row, duration, trackCode) => {
                     const result = {
                         trackCode: trackCode,
@@ -553,16 +786,23 @@
                     const trainId = row.id.toString().substring(0, 5);
                     const longNumClass = trainId.length > 2 ? ' train-num-long' : '';
                     const roomNameDisplay = roomAbbrev.includes('*') ? ` <span class="room-name">* ${row.roomName}</span>` : '';
+                    const isFav = currentFavSet.has(row.id);
+                    const favLabel = isFav ? 'Favorit entfernen' : 'Als Favorit markieren';
 
                     return `
             <div class="departure-row">
-                <div class="time">${row.start}</div>
+                <div class="time time-with-fav">
+                    <span class="time-text">${row.start}</span>
+                    <button type="button" class="fav-toggle" data-talk-id="${row.id}" aria-pressed="${isFav}" aria-label="${favLabel}">
+                        <i data-lucide="star"></i>
+                    </button>
+                </div>
                 <div class="trains">
                     <div class="train-number${trainClass}"><span class="train-prefix">${trackCode}</span>&#8239;<span class="train-num${longNumClass}">${trainId}</span></div>
                     ${recordingIcon}
                 </div>
                 <div class="route">
-                    <span class="destination">${row.title}&#8239;<i data-lucide="circle-dot"></i></span>
+                    <span class="destination">${row.title}</span>
                     <span class="station">${speaker}</span>
                     <span class="station-time">(&#8239;→&#8239;${toHours(toMinutes(row.start) + duration)}&#8239;)${roomNameDisplay}</span>
                 </div>
@@ -618,9 +858,10 @@
                 // Legend HTML (trackRowsHtml und roomRowsHtml werden an den Aufrufstellen aus data/buildFilterToggleUrl erzeugt)
                 const renderLegend = (formattedVersion, footerText, trackRowsHtml, roomRowsHtml) => `
         <div class="legend-wrapper">
-        <div class="time-range legend-title">
-                <div style="grid-column: 2 / -1; text-align: left;">Zeichenerklärung/Explanations/Legende</div>
-        </div>
+        <button type="button" class="time-range legend-title legend-toggle" id="legend-toggle" aria-expanded="false" aria-controls="legend-panel">
+                <span class="legend-toggle-label" style="grid-column: 1 / -1; text-align: left;">Zeichenerklärung/Explanations/Legende</span>
+        </button>
+        <div id="legend-panel" class="legend-panel">
         <div class="legend-section">
                 <div class="legend-group">
                         <h4>Events im Hauptverkehr/Main stage events/trains grandes lignes</h4>
@@ -657,7 +898,6 @@
                         <table class="legend-table">
                                 <tr><td><i data-lucide="video"></i></td><td>Diese Fahrt wird zu Schulungszwecken aufgezeichnet</td></tr>
                                 <tr><td><i data-lucide="video-off"></i></td><td>Diese Fahrt ist geplant kaputt</td></tr>
-                                <tr><td><i data-lucide="circle-dot"></i></td><td>bis hier sind alle Halte angegeben</td></tr>
                                 <tr><td><i data-lucide="utensils"></i></td><td>Bahnhofsrestaurant aufsuchen für Mittagspause</td></tr>
                                 <tr><td><i data-lucide="coffee"></i></td><td>Aussteigen für Kaffeepause</td></tr>
                                 <tr><td><i data-lucide="wine"></i></td><td>Sektempfang im Foyer, Gläser bereit halten</td></tr>
@@ -706,6 +946,7 @@
                         ${footerText}
                 </div>
         </div>
+        </div>
         </div>`;
 
                 const buildLegendFilterHtml = (data) => {
@@ -726,17 +967,21 @@
 
                 const formattedVersion = formatVersion(data.schedule.version || 'unknown');
 
-                const collectAndSortTalks = (days, conferenceDays, widgetData, selectedDay) => {
+                const collectAndSortTalks = (days, conferenceDays, widgetData, selectedDay, options = {}) => {
+                    const { idFilter = null, includeBreaks = true, applyPassesWithIdFilter = false } = options;
                     const allTalks = [];
                     days.forEach((day) => {
                         Object.entries(day.rooms || {}).forEach(([roomName, talks]) => {
                             talks.forEach((talk) => {
-                                if (!passesFilters(talk, roomName)) return;
+                                if (idFilter && !idFilter.has(talk.id)) return;
+                                if (idFilter) {
+                                    if (applyPassesWithIdFilter && !passesFilters(talk, roomName)) return;
+                                } else if (!passesFilters(talk, roomName)) return;
                                 allTalks.push({ ...talk, dayIndex: day.index, dayDate: day.date, roomName });
                             });
                         });
                     });
-                    if (widgetData) {
+                    if (widgetData && includeBreaks) {
                         const breaks = extractBreaks(widgetData, conferenceDays);
                         breaks.forEach((breakEvent) => {
                             if (selectedDay !== null && breakEvent.dayIndex !== selectedDay) return;
@@ -758,111 +1003,603 @@
                     return allTalks;
                 };
 
-                // Multi-day view
-                if (!isSingleDay) {
-                    const allTalks = collectAndSortTalks(data.schedule.conference.days, data.schedule.conference.days, widgetData, null);
-                    const talksByDay = new Map();
-                    allTalks.forEach((row) => {
-                        if (!talksByDay.has(row.dayIndex)) talksByDay.set(row.dayIndex, []);
-                        talksByDay.get(row.dayIndex).push(row);
+                const shareErrorBannerText = (reason) => {
+                    if (reason === 'version') return 'Dieser Link nutzt ein neueres Format. Bitte die Seite neu laden oder aktualisieren.';
+                    if (reason === 'empty') return 'Der Teilen-Link enthält keine gültigen Einträge.';
+                    return 'Dieser Teilen-Link ist ungültig oder beschädigt.';
+                };
+
+                const getFavoriteFilterTitle = (viewMode, hasFavorites) => {
+                    if (viewMode === VIEW_SHARE_ERROR) {
+                        return 'Teilen-Link ungültig. Passe die Adresse an oder öffne den Fahrplan ohne Hash.';
+                    }
+                    if (viewMode === VIEW_SHARE) {
+                        return 'Im Teilen-Link ist diese Filterung nicht verfügbar. Nutze „Gesamtfahrplan anzeigen“ für den vollständigen Fahrplan.';
+                    }
+                    if (!hasFavorites) {
+                        return FAVORITES_COPY.filterDisabledSaveFirst;
+                    }
+                    return '';
+                };
+
+                const getFavoriteFilterAriaWhenDisabled = (viewMode) => {
+                    if (viewMode === VIEW_SHARE_ERROR) return 'Nur Favoriten: Teilen-Link ungültig';
+                    if (viewMode === VIEW_SHARE) return 'Nur Favoriten: im Teilen-Link nicht verfügbar';
+                    return 'Nur Favoriten: keine gespeicherten Favoriten';
+                };
+
+                const queueFocusToolbarRoot = () => {
+                    requestAnimationFrame(() => {
+                        requestAnimationFrame(() => {
+                            if (toolbarRoot) toolbarRoot.focus();
+                        });
+                    });
+                };
+
+                const queueFocusElementById = (id) => {
+                    requestAnimationFrame(() => {
+                        requestAnimationFrame(() => {
+                            const el = document.getElementById(id);
+                            if (el) el.focus();
+                        });
+                    });
+                };
+
+                // Schedule toolbar (HTML builders)
+                const toolbarBtnInner = (icon, labelText) =>
+                    `<span class="toolbar-btn-icon" aria-hidden="true"><i data-lucide="${escapeAttr(icon)}"></i></span><span class="toolbar-btn-text">${escapeHtml(labelText)}</span>`;
+
+                const buildToolbarFavoriteFilterButton = ({
+                    disabled,
+                    favoritesOnlyActive,
+                    titleWhenDisabled,
+                    ariaWhenDisabled,
+                }) => {
+                    const labelFavorites = 'Favoriten';
+                    const labelFullPlan = 'Alle';
+                    const iconFavorites = 'star';
+                    const iconFullPlan = 'calendar-days';
+                    if (disabled) {
+                        const label = favoritesOnlyActive ? labelFullPlan : labelFavorites;
+                        const icon = favoritesOnlyActive ? iconFullPlan : iconFavorites;
+                        const body = toolbarBtnInner(icon, label);
+                        const titleAttr = titleWhenDisabled ? ` title="${escapeAttr(titleWhenDisabled)}"` : '';
+                        return `<button type="button" class="toolbar-btn toolbar-btn--compact toolbar-favorites-toggle" id="toolbar-favorites-toggle" disabled aria-disabled="true" aria-pressed="${favoritesOnlyActive}" aria-label="${escapeAttr(ariaWhenDisabled)}"${titleAttr}>${body}</button>`;
+                    }
+                    const showingFavoritesOnly = favoritesOnlyActive;
+                    const label = showingFavoritesOnly ? labelFullPlan : labelFavorites;
+                    const icon = showingFavoritesOnly ? iconFullPlan : iconFavorites;
+                    const titleEnabled = showingFavoritesOnly
+                        ? 'Vollständigen Fahrplan anzeigen (alle Programmpunkte, Filter wie gewohnt).'
+                        : 'Nur gespeicherte Favoriten anzeigen.';
+                    const body = toolbarBtnInner(icon, label);
+                    return `<button type="button" class="toolbar-btn toolbar-btn--compact toolbar-favorites-toggle" id="toolbar-favorites-toggle" aria-pressed="${showingFavoritesOnly}" title="${escapeAttr(titleEnabled)}" aria-label="${escapeAttr(titleEnabled)}">${body}</button>`;
+                };
+
+                const buildToolbarShareLinkButton = ({ disabled, labelText, titleText, ariaWhenDisabled, icon }) => {
+                    const ic = icon || 'link-2';
+                    const body = toolbarBtnInner(ic, labelText);
+                    if (disabled) {
+                        return `<button type="button" class="toolbar-btn toolbar-btn--compact toolbar-share-link" id="toolbar-share-link" disabled aria-disabled="true" aria-label="${escapeAttr(ariaWhenDisabled)}">${body}</button>`;
+                    }
+                    return `<button type="button" class="toolbar-btn toolbar-btn--compact toolbar-share-link" id="toolbar-share-link" title="${escapeAttr(titleText)}" aria-label="${escapeAttr(titleText)}">${body}</button>`;
+                };
+
+                const buildToolbarPlainButton = ({ id, className, label, title, disabled, icon, ariaLabel }) => {
+                    const cls = ['toolbar-btn', 'toolbar-btn--compact', className].filter(Boolean).join(' ');
+                    const d = disabled ? ' disabled aria-disabled="true"' : '';
+                    const t = title ? ` title="${escapeAttr(title)}"` : '';
+                    const a11y =
+                        icon && (ariaLabel || title)
+                            ? ` aria-label="${escapeAttr(ariaLabel || title)}"`
+                            : '';
+                    const body = icon ? toolbarBtnInner(icon, label) : escapeHtml(label);
+                    return `<button type="button" class="${cls}" id="${id}"${t}${a11y}${d}>${body}</button>`;
+                };
+
+                const renderScheduleToolbar = ({ stored, viewMode, shareIdSet, applyUrlState: applyState }) => {
+                    if (!toolbarRoot) return;
+                    const isShareOrError = viewMode === VIEW_SHARE || viewMode === VIEW_SHARE_ERROR;
+                    const shareIdsForLink = viewMode === VIEW_SHARE && shareIdSet ? [...shareIdSet] : stored.ids;
+                    const hashPreview = buildShareHashFromIds(shareIdsForLink);
+                    const urlProbe = new URL(location.href);
+                    urlProbe.hash = hashPreview;
+                    const urlTooLong = urlProbe.href.length > SHARE_URL_WARN_CHARS;
+                    const shareDisabled = shareIdsForLink.length === 0 || viewMode === VIEW_SHARE_ERROR;
+
+                    const onlyFavoritesInUrl = urlState.favoritesParam === '1';
+                    const hasFavorites = stored.ids.length > 0;
+                    const shareSelectionOk = viewMode === VIEW_SHARE && shareIdSet && shareIdSet.size > 0;
+                    const favoriteFilterDisabled = !hasFavorites || isShareOrError;
+                    const favoriteFilterChecked = Boolean(onlyFavoritesInUrl && hasFavorites && !isShareOrError);
+                    const favoriteFilterTitle = getFavoriteFilterTitle(viewMode, hasFavorites);
+                    const favoriteFilterAriaWhenDisabled = getFavoriteFilterAriaWhenDisabled(viewMode);
+                    const favoriteFilterMarkup = buildToolbarFavoriteFilterButton({
+                        disabled: favoriteFilterDisabled,
+                        favoritesOnlyActive: favoriteFilterChecked,
+                        titleWhenDisabled: favoriteFilterTitle,
+                        ariaWhenDisabled: favoriteFilterAriaWhenDisabled,
                     });
 
-                    departureTableContent.innerHTML = '';
-                    [...talksByDay.keys()].sort((a, b) => a - b).forEach((dayIndex) => {
-                        const dayRows = talksByDay.get(dayIndex);
-                        const weekday = weekdayFromIso(dayRows[0].dayDate);
-                        const dayLabel = weekday ? `Tag ${dayIndex} (${weekday})` : `Tag ${dayIndex}`;
-                        const dayHeaderHTML = `
+                    const labelLinkShort = 'Link';
+                    const titleLinkForOthers =
+                        'Kopiert den Link in die Zwischenablage. Einfügen in Chat, E-Mail oder Messenger. Auf vielen Handys erscheint zusätzlich ein Teilen-Dialog.';
+                    const labelSaveAllShort = 'Import';
+                    const titleSaveAll = FAVORITES_COPY.importSaveAllDetail;
+                    const titleImportDisabled = 'Nur bei geöffnetem gültigen Teilen-Link mit Auswahl.';
+
+                    const shareLinkBtn = buildToolbarShareLinkButton({
+                        disabled: shareDisabled,
+                        labelText: labelLinkShort,
+                        titleText: titleLinkForOthers,
+                        ariaWhenDisabled: 'Keine Auswahl zum Kopieren',
+                        icon: 'link-2',
+                    });
+                    const importDisabled = !shareSelectionOk;
+                    const importAllBtn = buildToolbarPlainButton({
+                        id: 'toolbar-import-all',
+                        className: '',
+                        label: labelSaveAllShort,
+                        title: importDisabled ? titleImportDisabled : titleSaveAll,
+                        disabled: importDisabled,
+                        icon: 'bookmark-plus',
+                        ariaLabel: importDisabled ? titleImportDisabled : titleSaveAll,
+                    });
+
+                    const labelShowFullShort = 'Gesamt';
+                    const titleShowFullSchedule =
+                        'Blendet die Auswahl aus diesem Teilen-Link aus und zeigt den vollständigen Fahrplan. Gespeicherte Favoriten bleiben erhalten.';
+                    const titleShowFullDisabled = 'Nur bei geöffnetem Teilen-Link mit Auswahl.';
+                    const showFullDisabled = !shareSelectionOk;
+                    const showFullScheduleBtn = buildToolbarPlainButton({
+                        id: 'toolbar-show-full-schedule',
+                        className: 'toolbar-show-full-schedule',
+                        label: labelShowFullShort,
+                        title: showFullDisabled ? titleShowFullDisabled : titleShowFullSchedule,
+                        disabled: showFullDisabled,
+                        icon: 'calendar-days',
+                        ariaLabel: showFullDisabled ? titleShowFullDisabled : titleShowFullSchedule,
+                    });
+
+                    const labelClearShort = 'Leeren';
+                    const titleClearFavorites = FAVORITES_COPY.clearAllDetail;
+                    const titleClearDisabled = 'Keine gespeicherten Favoriten.';
+                    const clearDisabled = !hasFavorites;
+                    const clearAllBtn = buildToolbarPlainButton({
+                        id: 'toolbar-clear-favorites',
+                        className: 'toolbar-clear-favorites',
+                        label: labelClearShort,
+                        title: clearDisabled ? titleClearDisabled : titleClearFavorites,
+                        disabled: clearDisabled,
+                        icon: 'trash-2',
+                        ariaLabel: clearDisabled ? titleClearDisabled : titleClearFavorites,
+                    });
+
+                    const toolbarMainActions = `${showFullScheduleBtn}${clearAllBtn}${importAllBtn}${shareLinkBtn}`;
+
+                    toolbarRoot.innerHTML = `<div class="schedule-toolbar">
+                            ${favoriteFilterMarkup}
+                            ${toolbarMainActions}
+                        </div>`;
+                    if (urlTooLong && !shareDisabled) {
+                        toolbarRoot.insertAdjacentHTML(
+                            'beforeend',
+                            `<p class="share-url-warn" role="status">Der Link ist sehr lang. In manchen Apps kann das stören.</p>`
+                        );
+                    }
+
+                    const showFullScheduleEl = document.getElementById('toolbar-show-full-schedule');
+                    if (showFullScheduleEl) {
+                        showFullScheduleEl.addEventListener('click', () => {
+                            const u = new URL(location.href);
+                            u.hash = '';
+                            replaceBrowserUrlFrom(u);
+                            applyState();
+                            queueFocusToolbarRoot();
+                        });
+                    }
+                    const shareLinkEl = document.getElementById('toolbar-share-link');
+                    if (shareLinkEl && !shareDisabled) {
+                        let shareStatusTimer;
+                        let copyLabelResetTimer;
+                        const labelAfterCopyOk = 'Kopiert';
+                        const copyOkLabelMs = 2800;
+                        const announceCopyShareStatus = (msg) => {
+                            if (!statusRoot) return;
+                            statusRoot.textContent = msg;
+                            statusRoot.classList.add('schedule-status-sr');
+                            window.clearTimeout(shareStatusTimer);
+                            shareStatusTimer = window.setTimeout(() => {
+                                statusRoot.textContent = '';
+                            }, 2000);
+                        };
+                        const restoreShareLinkButtonLabel = () => {
+                            shareLinkEl.innerHTML = toolbarBtnInner('link-2', labelLinkShort);
+                            shareLinkEl.setAttribute('title', titleLinkForOthers);
+                            shareLinkEl.setAttribute('aria-label', titleLinkForOthers);
+                            if (window.lucide) window.lucide.createIcons();
+                        };
+                        shareLinkEl.addEventListener('click', async () => {
+                            const u = new URL(location.href);
+                            u.hash = buildShareHashFromIds(shareIdsForLink);
+                            if (typeof navigator.share === 'function') {
+                                try {
+                                    await navigator.share({ url: u.href });
+                                    announceCopyShareStatus('Link geteilt.');
+                                    return;
+                                } catch (e) {
+                                    if (e && e.name === 'AbortError') return;
+                                }
+                            }
+                            try {
+                                await navigator.clipboard.writeText(u.href);
+                                window.clearTimeout(copyLabelResetTimer);
+                                shareLinkEl.innerHTML = toolbarBtnInner('check', labelAfterCopyOk);
+                                shareLinkEl.setAttribute(
+                                    'title',
+                                    'Link liegt in der Zwischenablage. Nochmals klicken zum erneuten Kopieren.'
+                                );
+                                shareLinkEl.setAttribute('aria-label', 'Kopiert. Link in der Zwischenablage.');
+                                if (window.lucide) window.lucide.createIcons();
+                                copyLabelResetTimer = window.setTimeout(() => {
+                                    restoreShareLinkButtonLabel();
+                                }, copyOkLabelMs);
+                            } catch {
+                                if (!statusRoot) return;
+                                statusRoot.textContent =
+                                    'Kopieren nicht möglich. Adresse in der Titelleiste markieren und kopieren.';
+                                statusRoot.classList.remove('schedule-status-sr');
+                                window.clearTimeout(shareStatusTimer);
+                                shareStatusTimer = window.setTimeout(() => {
+                                    statusRoot.textContent = '';
+                                    statusRoot.classList.add('schedule-status-sr');
+                                }, 6000);
+                            }
+                        });
+                    }
+                    const clearFavoritesEl = document.getElementById('toolbar-clear-favorites');
+                    if (clearFavoritesEl && clearFavoritesDialogEl) {
+                        clearFavoritesEl.addEventListener('click', () => {
+                            clearFavoritesDialogEl.showModal();
+                        });
+                    }
+                    const favoriteFilterToggle = document.getElementById('toolbar-favorites-toggle');
+                    if (favoriteFilterToggle && !favoriteFilterDisabled) {
+                        favoriteFilterToggle.addEventListener('click', () => {
+                            const u = new URL(location.href);
+                            if (u.searchParams.get('favorites') === '1') u.searchParams.delete('favorites');
+                            else u.searchParams.set('favorites', '1');
+                            replaceBrowserUrlFrom(u);
+                            applyState();
+                            queueFocusToolbarRoot();
+                        });
+                    }
+                    const importAll = document.getElementById('toolbar-import-all');
+                    if (importAll) {
+                        let importStatusTimer;
+                        importAll.addEventListener('click', () => {
+                            if (!shareIdSet || shareIdSet.size === 0) return;
+                            const cur = loadFavorites();
+                            const merged = new Set([...cur.ids, ...shareIdSet]);
+                            const ok = saveFavorites({ v: 1, ids: [...merged] });
+                            if (ok && statusRoot) {
+                                statusRoot.textContent = 'Favoriten übernommen.';
+                                statusRoot.classList.add('schedule-status-sr');
+                                window.clearTimeout(importStatusTimer);
+                                importStatusTimer = window.setTimeout(() => {
+                                    statusRoot.textContent = '';
+                                }, 2500);
+                            }
+                            applyState();
+                            queueFocusToolbarRoot();
+                        });
+                    }
+                };
+
+                const applyUrlState = (opts = {}) => {
+                    const forPrint = opts.forPrint === true;
+                    const favFocusTalkId = pendingFocusFavTalkId;
+                    pendingFocusFavTalkId = null;
+                    try {
+                    refreshUrlState();
+                    // With a valid share hash (#f=1/...), only the shared list is shown; ?favorites= is ignored.
+                    // Remove ?favorites= from the address bar so it does not look like an active filter.
+                    let parsedShare = parseShareHash(location.hash);
+                    if (
+                        !forPrint &&
+                        parsedShare.kind === 'ok' &&
+                        new URLSearchParams(location.search).has('favorites')
+                    ) {
+                        const u = new URL(location.href);
+                        u.searchParams.delete('favorites');
+                        replaceBrowserUrlFrom(u);
+                        refreshUrlState();
+                    }
+                    const stored = loadFavorites();
+                    currentFavSet = new Set(stored.ids);
+                    if (stored.ids.length === 0 && urlState.favoritesParam === '1') {
+                        const u = new URL(location.href);
+                        u.searchParams.delete('favorites');
+                        replaceBrowserUrlFrom(u);
+                        refreshUrlState();
+                    }
+
+                    const derived = deriveViewMode({
+                        parsedShare,
+                        favoritesParam: urlState.favoritesParam,
+                    });
+                    let { viewMode, shareIdSet, shareErrorReason } = derived;
+                    programFiltersActive = derived.programFiltersActive;
+
+                    const isSingleDay =
+                        urlState.isSingleDay &&
+                        (viewMode === VIEW_NORMAL || viewMode === VIEW_OWN_FAVORITES) &&
+                        (!forPrint || viewMode === VIEW_OWN_FAVORITES);
+                    const selectedDay = urlState.selectedDay;
+                    const collectOpts = {
+                        applyPassesWithIdFilter: viewMode === VIEW_OWN_FAVORITES,
+                    };
+
+                    if (bannersRoot) {
+                        if (viewMode === VIEW_SHARE_ERROR) {
+                            bannersRoot.innerHTML = `<div class="share-error-banner" role="alert">${escapeHtml(shareErrorBannerText(shareErrorReason))}</div>`;
+                        } else {
+                            bannersRoot.innerHTML = '';
+                        }
+                    }
+
+                    if (toolbarRoot && forPrint) {
+                        toolbarRoot.innerHTML = '';
+                    }
+                    if (toolbarRoot && !forPrint) {
+                        renderScheduleToolbar({ stored, viewMode, shareIdSet, applyUrlState });
+                    }
+
+                    if (viewMode === VIEW_NORMAL || viewMode === VIEW_OWN_FAVORITES) {
+                        updateStationTitle(buildFilterLabelParts());
+                    } else {
+                        updateStationTitle([]);
+                    }
+
+                    if (viewMode === VIEW_SHARE_ERROR) {
+                        departureTableContent.innerHTML = '';
+                        if (window.lucide) window.lucide.createIcons();
+                        requestAnimationFrame(() => updateScheduleStickyStackOffset());
+                        return;
+                    }
+
+                    const idFilterForView =
+                        viewMode === VIEW_SHARE && shareIdSet
+                            ? shareIdSet
+                            : viewMode === VIEW_OWN_FAVORITES
+                            ? currentFavSet
+                            : null;
+                    const includeBreaks = idFilterForView === null && (forPrint || viewMode === VIEW_NORMAL);
+
+                    if (viewMode === VIEW_OWN_FAVORITES && currentFavSet.size === 0) {
+                        departureTableContent.innerHTML =
+                            '<div class="favorites-empty" role="status">' + escapeHtml(FAVORITES_COPY.emptyState) + '</div>';
+                        if (window.lucide) window.lucide.createIcons();
+                        requestAnimationFrame(() => updateScheduleStickyStackOffset());
+                        return;
+                    }
+
+                    const runMultiDay = () => {
+                        if (headerLeft && headerDateRange) headerLeft.textContent = headerDateRange;
+                        const allTalks = collectAndSortTalks(data.schedule.conference.days, data.schedule.conference.days, widgetData, null, {
+                            idFilter: idFilterForView,
+                            includeBreaks,
+                            ...collectOpts,
+                        });
+                        if (!allTalks.length && (viewMode === VIEW_SHARE || viewMode === VIEW_OWN_FAVORITES)) {
+                            departureTableContent.innerHTML = '<div class="no-data" role="status">Keine passenden Einträge im aktuellen Programm.</div>';
+                            return;
+                        }
+                        const talksByDay = new Map();
+                        allTalks.forEach((row) => {
+                            if (!talksByDay.has(row.dayIndex)) talksByDay.set(row.dayIndex, []);
+                            talksByDay.get(row.dayIndex).push(row);
+                        });
+
+                        departureTableContent.innerHTML = '';
+                        [...talksByDay.keys()].sort((a, b) => a - b).forEach((dayIndex) => {
+                            const dayRows = talksByDay.get(dayIndex);
+                            const weekday = weekdayFromIso(dayRows[0].dayDate);
+                            const dayLabel = weekday ? `Tag ${dayIndex} (${weekday})` : `Tag ${dayIndex}`;
+                            const dayHeaderHTML = `
                         <div class="time-range">
                                 <div></div>
                                 <div></div>
                                 <div><a href="${buildFilterToggleUrl('only-day', dayIndex)}">${dayLabel}</a></div>
                                 <div></div>
                         </div>`;
-                        const firstRowHTML = renderRow(dayRows[0]);
-                        departureTableContent.insertAdjacentHTML('beforeend', `<div class="day-group">${dayHeaderHTML}${firstRowHTML}</div>`);
-                        for (let i = 1; i < dayRows.length; i += 1) {
-                            departureTableContent.insertAdjacentHTML('beforeend', renderRow(dayRows[i]));
+                            const rowsHTML = dayRows.map((row) => renderRow(row)).join('');
+                            departureTableContent.insertAdjacentHTML('beforeend', `<div class="day-group">${dayHeaderHTML}${rowsHTML}</div>`);
+                        });
+
+                        const { trackRowsHtml, roomRowsHtml } = buildLegendFilterHtml(data);
+                        const legend = renderLegend(
+                            formattedVersion,
+                            `Dieser Fahrplan ist bis Tag ${totalDays} (16:00) Eigentum der FOSSGIS-Konferenz. Danach geht er in die chaotische Selbstverwaltung über und darf legal entwendet werden.`,
+                            trackRowsHtml,
+                            roomRowsHtml
+                        );
+                        departureTableContent.insertAdjacentHTML('beforeend', legend);
+                    };
+
+                    const runSingleDay = () => {
+                        const dayObj = data?.schedule?.conference?.days?.find((d) => d.index === selectedDay);
+                        if (!dayObj) {
+                            showError(`Keine Inhalte für Tag ${selectedDay} gefunden. Versuchen Sie z.B. ?only-day=0 oder ?only-day=2 in der URL.`);
+                            return false;
                         }
-                    });
 
-                    const { trackRowsHtml, roomRowsHtml } = buildLegendFilterHtml(data);
-                    const legend = renderLegend(formattedVersion, `Dieser Fahrplan ist bis Tag ${totalDays} (16:00) Eigentum der FOSSGIS-Konferenz. Danach geht er in die chaotische Selbstverwaltung über und darf legal entwendet werden.`, trackRowsHtml, roomRowsHtml);
-                    departureTableContent.insertAdjacentHTML('beforeend', legend);
-                } else {
-                    // Single-day view
-                    const dayObj = data?.schedule?.conference?.days?.find((d) => d.index === selectedDay);
-                    if (!dayObj) {
-                        showError(`Keine Inhalte für Tag ${selectedDay} gefunden. Versuchen Sie z.B. ?only-day=0 oder ?only-day=2 in der URL.`);
-                        return;
-                    }
-
-                    const dayTalks = collectAndSortTalks([dayObj], data.schedule.conference.days, widgetData, selectedDay);
-                    if (!dayTalks.length) {
-                        showError(`Keine Inhalte für Tag ${selectedDay} gefunden. Versuchen Sie z.B. ?only-day=0 oder ?only-day=2 in der URL.`);
-                        return;
-                    }
-
-                    if (headerLeft) {
-                        const [year, month, day] = (dayObj.date || '').split('-');
-                        const weekday = weekdayFromIso(dayObj.date);
-                        headerLeft.textContent = weekday
-                            ? `${day}.${month}.${year} — ${weekday} — Tag ${selectedDay}`
-                            : `${day}.${month}.${year} — Tag ${selectedDay}`;
-                    }
-
-                    const slots = [];
-                    let currentLabel = null;
-                    let currentRows = null;
-                    dayTalks.forEach((row) => {
-                        const rangeLabel = getTimeRangeLabel(row.start);
-                        if (rangeLabel !== currentLabel) {
-                            currentLabel = rangeLabel;
-                            currentRows = [];
-                            slots.push({ label: rangeLabel, rows: currentRows });
+                        const dayTalks = collectAndSortTalks([dayObj], data.schedule.conference.days, widgetData, selectedDay, {
+                            idFilter: idFilterForView,
+                            includeBreaks,
+                            ...collectOpts,
+                        });
+                        if (!dayTalks.length) {
+                            if (viewMode === VIEW_OWN_FAVORITES) {
+                                departureTableContent.innerHTML =
+                                    '<div class="no-data" role="status">Keine passenden Einträge im aktuellen Programm.</div>';
+                                return true;
+                            }
+                            showError(`Keine Inhalte für Tag ${selectedDay} gefunden. Versuchen Sie z.B. ?only-day=0 oder ?only-day=2 in der URL.`);
+                            return false;
                         }
-                        currentRows.push(row);
-                    });
 
-                    departureTableContent.innerHTML = '';
-                    slots.forEach(({ label, rows }) => {
-                        const headerHTML = label
-                            ? `
+                        if (headerLeft) {
+                            const [year, month, day] = (dayObj.date || '').split('-');
+                            const weekday = weekdayFromIso(dayObj.date);
+                            headerLeft.textContent = weekday
+                                ? `${day}.${month}.${year} — ${weekday} — Tag ${selectedDay}`
+                                : `${day}.${month}.${year} — Tag ${selectedDay}`;
+                        }
+
+                        const slots = [];
+                        let currentLabel = null;
+                        let currentRows = null;
+                        dayTalks.forEach((row) => {
+                            const rangeLabel = getTimeRangeLabel(row.start);
+                            if (rangeLabel !== currentLabel) {
+                                currentLabel = rangeLabel;
+                                currentRows = [];
+                                slots.push({ label: rangeLabel, rows: currentRows });
+                            }
+                            currentRows.push(row);
+                        });
+
+                        departureTableContent.innerHTML = '';
+                        slots.forEach(({ label, rows }) => {
+                            const headerHTML = label
+                                ? `
                         <div class="time-range">
                             <div></div>
                             <div></div>
                             <div>${label}</div>
                             <div></div>
                         </div>`
-                            : '';
-                        const firstRowHTML = renderRow(rows[0]);
-                        departureTableContent.insertAdjacentHTML('beforeend', `<div class="time-range-group">${headerHTML}${firstRowHTML}</div>`);
-                        for (let i = 1; i < rows.length; i += 1) {
-                            departureTableContent.insertAdjacentHTML('beforeend', renderRow(rows[i]));
+                                : '';
+                            const rowsHTML = rows.map((row) => renderRow(row)).join('');
+                            departureTableContent.insertAdjacentHTML('beforeend', `<div class="time-range-group">${headerHTML}${rowsHTML}</div>`);
+                        });
+
+                        const takeWithText =
+                            selectedDay === totalDays
+                                ? 'Nimm mich beim Abbau mit.'
+                                : `Nimm mich ab Tag ${selectedDay + 1} mit, aber lass das Klebeband da.`;
+
+                        const { trackRowsHtml, roomRowsHtml } = buildLegendFilterHtml(data);
+                        const legend = renderLegend(formattedVersion, takeWithText, trackRowsHtml, roomRowsHtml);
+                        departureTableContent.insertAdjacentHTML('beforeend', legend);
+                        return true;
+                    };
+
+                    if (forPrint || viewMode === VIEW_NORMAL || viewMode === VIEW_OWN_FAVORITES) {
+                        if (!isSingleDay) runMultiDay();
+                        else if (runSingleDay() === false) {
+                            if (window.lucide) window.lucide.createIcons();
+                            requestAnimationFrame(() => updateScheduleStickyStackOffset());
+                            return;
                         }
+                    } else {
+                        runMultiDay();
+                    }
+
+                    if (window.lucide) window.lucide.createIcons();
+
+                    requestAnimationFrame(() => {
+                        updateScheduleStickyStackOffset();
+                        syncLegendToggleState();
                     });
 
-                    const takeWithText = selectedDay === totalDays
-                        ? 'Nimm mich beim Abbau mit.'
-                        : `Nimm mich ab Tag ${selectedDay + 1} mit, aber lass das Klebeband da.`;
+                    if (disableLinkUnderline) {
+                        const anchors = document.querySelectorAll('a[href]');
+                        anchors.forEach((a) => {
+                            if (a.querySelector('img')) return;
+                            a.removeAttribute('href');
+                        });
+                    }
+                    } finally {
+                        if (favFocusTalkId !== null) {
+                            requestAnimationFrame(() => {
+                                requestAnimationFrame(() => {
+                                    const el = departureTableContent.querySelector(`.fav-toggle[data-talk-id="${favFocusTalkId}"]`);
+                                    if (el) el.focus();
+                                });
+                            });
+                        }
+                    }
+                };
 
-                    const { trackRowsHtml, roomRowsHtml } = buildLegendFilterHtml(data);
-                    const legend = renderLegend(formattedVersion, takeWithText, trackRowsHtml, roomRowsHtml);
-                    departureTableContent.insertAdjacentHTML('beforeend', legend);
-                }
+                departureTableContent.addEventListener('click', (e) => {
+                    const legBtn = e.target.closest('.legend-toggle');
+                    if (legBtn && departureTable.contains(legBtn) && document.body.classList.contains('mobile-columns')) {
+                        const wrap = legBtn.closest('.legend-wrapper');
+                        if (wrap) {
+                            wrap.classList.toggle('legend-expanded');
+                            legBtn.setAttribute('aria-expanded', wrap.classList.contains('legend-expanded') ? 'true' : 'false');
+                        }
+                        return;
+                    }
+                    const btn = e.target.closest('.fav-toggle');
+                    if (!btn || !departureTable.contains(btn)) return;
+                    const id = Number(btn.dataset.talkId);
+                    if (!Number.isFinite(id)) return;
+                    pendingFocusFavTalkId = id;
+                    toggleFavorite(id);
+                    applyUrlState();
+                });
 
-                if (window.lucide) window.lucide.createIcons();
+                window.addEventListener('storage', (e) => {
+                    if (e.key !== STORAGE_KEY) return;
+                    applyUrlState();
+                });
 
-                // optional: in Browser und im PDF keine Link-Unterstreichungen rendern.
-                // Ansatz: Entferne fuer Text-Links das href, damit Firefox im Print-Rendering keine Hyperlink-Dekoration erzeugt.
-                if (disableLinkUnderline) {
-                    const anchors = document.querySelectorAll('a[href]');
-                    anchors.forEach((a) => {
-                        // QR-Codes sollen weiterhin klickbar bleiben.
-                        if (a.querySelector('img')) return;
-                        a.removeAttribute('href');
+                window.addEventListener('hashchange', () => applyUrlState());
+                window.addEventListener('popstate', () => applyUrlState());
+
+                window.addEventListener('beforeprint', () => {
+                    applyUrlState({ forPrint: true });
+                });
+                window.addEventListener('afterprint', () => {
+                    applyUrlState({ forPrint: false });
+                });
+
+                const performClearAllFavorites = () => {
+                    const ok = saveFavorites({ v: 1, ids: [] });
+                    if (!ok) return;
+                    refreshUrlState();
+                    const u = new URL(location.href);
+                    if (urlState.favoritesParam === '1') u.searchParams.delete('favorites');
+                    if (parseShareHash(location.hash).kind === 'ok') u.hash = '';
+                    replaceBrowserUrlFrom(u);
+                    applyUrlState();
+                    queueFocusElementById('toolbar-clear-favorites');
+                };
+
+                if (clearFavoritesDialogEl) {
+                    const clearDialogCancel = document.getElementById('clear-favorites-dialog-cancel');
+                    const clearDialogConfirm = document.getElementById('clear-favorites-dialog-confirm');
+                    if (clearDialogCancel) {
+                        clearDialogCancel.addEventListener('click', () => {
+                            clearFavoritesDialogEl.close();
+                            queueFocusElementById('toolbar-clear-favorites');
+                        });
+                    }
+                    if (clearDialogConfirm) {
+                        clearDialogConfirm.addEventListener('click', () => {
+                            clearFavoritesDialogEl.close();
+                            performClearAllFavorites();
+                        });
+                    }
+                    clearFavoritesDialogEl.addEventListener('cancel', () => {
+                        queueFocusElementById('toolbar-clear-favorites');
                     });
                 }
+
+                applyUrlState();
             })();
         </script>
 </body>
