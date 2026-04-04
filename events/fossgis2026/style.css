@@ -859,6 +859,52 @@ body.tinted-background .schedule-toolbar button:hover:not(:disabled) {
     }
 }
 
+/*
+ * Sehr schmale Displays (Smartphone hochkant): Zug-Spalte hat wenig Inhalt,
+ * Richtung braucht Flaeche. Engere zweite Spalte, mehr minmax(0, …) fuer Richtung,
+ * Zeilenumbruch in der Zug-Zelle statt breiter Mindestbreite.
+ */
+@media (max-width: 480px) {
+    body.mobile-columns {
+        --grid-cols-header: 52px minmax(0, 2.5rem) minmax(0, 2fr) 42px;
+        --grid-cols-content: 52px minmax(0, 2.5rem) minmax(0, 2fr) 42px;
+    }
+
+    body.mobile-columns .column-headers,
+    body.mobile-columns .departure-row {
+        column-gap: 4px;
+    }
+
+    body.mobile-columns .time-range {
+        gap: 4px;
+    }
+
+    body.mobile-columns .column-headers > div:nth-child(2) {
+        font-size: 9px;
+        line-height: 1.12;
+        text-align: center;
+        align-self: center;
+    }
+
+    body.mobile-columns .trains {
+        align-items: center;
+        justify-content: flex-start;
+        text-align: center;
+    }
+
+    body.mobile-columns .train-number {
+        font-size: 12px;
+        line-height: 1.2;
+        overflow-wrap: anywhere;
+        word-break: break-word;
+        max-width: 100%;
+    }
+
+    body.mobile-columns .no-video-icon {
+        font-size: 11px;
+    }
+}
+
 .share-url-warn {
     font-size: 12px;
     color: #a33;
