@@ -143,9 +143,11 @@
           null: "NAT",
           undefined: "NAT",
         };
-        // Legende aus trackMap, Kürzel alphabetisch
+        // Legende aus trackMap, Kürzel alphabetisch (null/undefined ignorieren)
         const trackLegendRows = Object.entries(trackMap)
-          .filter(([name]) => name != null)
+          .filter(
+            ([name]) => name != null && name !== "null" && name !== "undefined",
+          )
           .map(([name, code]) => [code, name])
           .sort((a, b) => a[0].localeCompare(b[0]));
         const totalDays = 4;
@@ -587,7 +589,6 @@
         departureTableContent.innerHTML =
           '<div class="loading">Lade Inhalte…</div>';
 
-        // Fetch schedule data
         let data;
         try {
           const res = await fetch(scheduleUrl);
@@ -931,8 +932,7 @@
           trackCode = eventType.trackCode;
           const isSektempfang =
             row.title &&
-            (row.title.toLowerCase().includes("sektempfang") ||
-              row.title.toLowerCase().includes("sekt"));
+            (/sektempfang/i.test(row.title) || /\bsekt\b/i.test(row.title));
 
           const roomAbbrev = abbreviateRoom(row.roomName);
           // Tag-Klassifikation für Video-Links: vergangen → Aufzeichnung, heute → Livestream, zukünftig → nur Icon
