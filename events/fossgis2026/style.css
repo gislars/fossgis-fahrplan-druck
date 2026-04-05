@@ -73,7 +73,6 @@
   * {
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
-    color-adjust: exact;
   }
 
   /*
@@ -499,14 +498,12 @@ body.mobile-columns .schedule-desktop-title {
 .time-range-group {
     -webkit-column-break-inside: avoid;
     -moz-column-break-inside: avoid;
-    column-break-inside: avoid;
     break-inside: avoid;
 }
 
 .day-group {
     -webkit-column-break-inside: avoid;
     -moz-column-break-inside: avoid;
-    column-break-inside: avoid;
     break-inside: avoid;
 }
 
@@ -518,7 +515,6 @@ body.mobile-columns .schedule-desktop-title {
 body:not(.mobile-columns) .day-group {
     -webkit-column-break-inside: auto;
     -moz-column-break-inside: auto;
-    column-break-inside: auto;
     break-inside: auto;
 }
 
@@ -530,7 +526,6 @@ body:not(.mobile-columns) .day-group > .time-range {
 body:not(.mobile-columns) .time-range-group {
     -webkit-column-break-inside: auto;
     -moz-column-break-inside: auto;
-    column-break-inside: auto;
     break-inside: auto;
 }
 
