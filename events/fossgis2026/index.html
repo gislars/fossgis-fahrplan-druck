@@ -127,6 +127,7 @@
         if (
           !eventCfg ||
           typeof eventCfg.scheduleUrl !== "string" ||
+          typeof eventCfg.widgetScheduleUrl !== "string" ||
           !eventCfg.trackMap
         ) {
           const root = document.querySelector(".departure-table-content");
@@ -137,6 +138,7 @@
         }
         const {
           scheduleUrl,
+          widgetScheduleUrl,
           trackMap,
           timeRanges,
           breakRoomName,
@@ -623,15 +625,10 @@
           headerLeft.textContent = headerDateRange;
         updateStationTitle(buildFilterLabelParts());
 
-        // Fetch widget JSON for breaks/pauses
+        // Fetch widget JSON for breaks/pauses (URL: config.js widgetScheduleUrl)
         let widgetData = null;
         try {
-          // Use generic /v/latest/ URL which always provides the latest version
-          const widgetUrl = scheduleUrl.replace(
-            /\/export\/schedule\.json$/,
-            "/v/latest/widgets/schedule.json",
-          );
-          const widgetRes = await fetch(widgetUrl);
+          const widgetRes = await fetch(widgetScheduleUrl.trim());
           if (widgetRes.ok) {
             widgetData = await widgetRes.json();
           } else {

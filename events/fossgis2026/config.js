@@ -7,6 +7,10 @@ window.FossgisFahrplanEventConfig = {
   scheduleUrl:
     "https://pretalx.com/fossgis2026/schedule/export/schedule.json",
 
+  /** Pretalx Widget-JSON (Pausen); /v/latest/ liefert stets die aktuelle Version. */
+  widgetScheduleUrl:
+    "https://pretalx.com/fossgis2026/schedule/v/latest/widgets/schedule.json",
+
   trackMap: {
     "Grundlagen Open-Source-GIS und OpenStreetMap": "OSG",
     "Neuigkeiten und Interessantes aus den Open-Source-Projekten": "NEW",
