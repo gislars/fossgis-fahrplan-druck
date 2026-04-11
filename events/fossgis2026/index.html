@@ -16,7 +16,7 @@
     <div class="schedule-container">
       <!-- Header -->
       <div class="header">
-        <div class="header-left">24.03.2026 – 28.03.2026</div>
+        <div class="header-left"></div>
         <div class="fg26-logo" role="img" aria-label="FOSSGIS e.V."></div>
       </div>
 
@@ -29,7 +29,7 @@
               <span class="title-label-italic">Departure</span>
               <span class="title-label-italic">Départ</span>
             </div>
-            <div class="station-name">FOSSGIS Konferenz 2026</div>
+            <div class="station-name"></div>
           </div>
         </div>
       </div>
@@ -45,7 +45,7 @@
       <div class="schedule-mobile-sticky-head">
         <div class="title-section schedule-mobile-only-station">
           <div class="title-left">
-            <div class="station-name">FOSSGIS Konferenz 2026</div>
+            <div class="station-name"></div>
           </div>
         </div>
 
@@ -120,29 +120,32 @@
     </div>
 
     <script src="../../assets/lucide.js"></script>
+    <script src="config.js"></script>
     <script>
       (async () => {
-        // Event-specific configuration
-        const scheduleUrl =
-          "https://pretalx.com/fossgis2026/schedule/export/schedule.json";
-        const trackMap = {
-          "Grundlagen Open-Source-GIS und OpenStreetMap": "OSG",
-          "Neuigkeiten und Interessantes aus den Open-Source-Projekten": "NEW",
-          OpenStreetMap: "OSM",
-          Praxisberichte: "PRA",
-          "Daten, Datenbanken und Datenprozessierung": "DDD",
-          "Routing und Mobilität": "RUM",
-          "Raum-zeitliche Analysen und Modelle": "RZM",
-          "Rasterdaten und Fernerkundung": "RAS",
-          "3D, Drohnen, LIDAR, Geo-AR/VR": "3D",
-          "Kartographie und Visualisierung": "KUV",
-          "Offene Standards, z.B. INSPIRE, OGC": "STA",
-          Geodatenmanagement: "GDM",
-          "Open Data, Datenschutz und Lizenzen": "LIZ",
-          "Ausbildung, Lehre, Open Science": "EDU",
-          null: "NAT",
-          undefined: "NAT",
-        };
+        const eventCfg = window.FossgisFahrplanEventConfig;
+        if (
+          !eventCfg ||
+          typeof eventCfg.scheduleUrl !== "string" ||
+          !eventCfg.trackMap
+        ) {
+          const root = document.querySelector(".departure-table-content");
+          if (root)
+            root.innerHTML =
+              '<div class="no-data">Konfiguration fehlt oder ist ungültig (config.js).</div>';
+          return;
+        }
+        const {
+          scheduleUrl,
+          trackMap,
+          timeRanges,
+          breakRoomName,
+          breakPrefix,
+          breakTitlePrefix,
+          redRoomsList,
+          streamingUrlByRoom,
+        } = eventCfg;
+
         // Legende aus trackMap, Kürzel alphabetisch (null/undefined ignorieren)
         const trackLegendRows = Object.entries(trackMap)
           .filter(
@@ -150,44 +153,9 @@
           )
           .map(([name, code]) => [code, name])
           .sort((a, b) => a[0].localeCompare(b[0]));
-        const totalDays = 4;
-        const headerDateRange = "24.03.2026 – 28.03.2026";
-        const stationName = "FOSSGIS Konferenz 2026";
-        const timeRanges = [
-          { start: 9, end: 11, label: "9.00 — 11.00" },
-          { start: 12, end: 13, label: "12.00 — 13.00" },
-          { start: 14, end: 15, label: "14.00 — 15.00" },
-          { start: 16, end: 18, label: "16.00 — 18.00" },
-          { start: 19, end: 20, label: "19.00 — 20.00" },
-        ];
-
-        // Break/Pause constants
-        const breakRoomName = "Alle Räume";
-        const breakPrefix = "PAU";
-        const breakTitlePrefix = "Betriebsunterbrechung wegen";
-
-        // Rooms that should be displayed in accent color
-        const redRoomsList = ["HS1", "HS2", "HS3", "HS4"];
-
-        // Streaming-URL pro Raum (Livestream am Konferenztag); genaue URLs bei Bekanntwerden ergänzen
-        const streamingUrlByRoom = {
-          HS1: "https://streaming.media.ccc.de/fossgis2026/hs1",
-          HS2: "https://streaming.media.ccc.de/fossgis2026/hs2",
-          HS3: "https://streaming.media.ccc.de/fossgis2026/hs3",
-          HS4: "https://streaming.media.ccc.de/fossgis2026/hs4",
-          BoF1: "",
-          BoF2: "",
-          BoF3: "",
-          WS1: "",
-          WS2: "",
-          WS3: "",
-          WS4: "",
-          OSM1: "",
-          OSM2: "",
-          OSM3: "",
-          OO: "",
-          Post: "",
-        };
+        let totalDays = 0;
+        let headerDateRange = "";
+        let stationName = "";
 
         const today = new Date();
         // for testing: set date to event date, hint: month are 0 based in JavaScript
@@ -526,8 +494,6 @@
           );
         }
 
-        if (headerLeft && headerDateRange)
-          headerLeft.textContent = headerDateRange;
         let programFiltersActive = true;
 
         const updateStationTitle = (filterLabelParts) => {
@@ -564,8 +530,6 @@
           return parts;
         };
 
-        updateStationTitle(buildFilterLabelParts());
-
         const passesFilters = (talk, roomName) => {
           if (!programFiltersActive) return true;
           if (urlState.onlyTrackParam) {
@@ -592,6 +556,12 @@
         let data;
         try {
           const res = await fetch(scheduleUrl);
+          if (!res.ok) {
+            showError(
+              `Fahrplandaten konnten nicht geladen werden (HTTP ${res.status}).`,
+            );
+            return;
+          }
           data = await res.json();
         } catch (e) {
           showError(
@@ -599,6 +569,59 @@
           );
           return;
         }
+
+        const conf = data?.schedule?.conference;
+        const confDays = conf?.days;
+        if (!conf || !Array.isArray(confDays) || confDays.length === 0) {
+          showError("Ungültige oder leere Fahrplandaten.");
+          return;
+        }
+
+        const formatDeDate = (iso) => {
+          if (!iso || typeof iso !== "string") return "";
+          const head = iso.slice(0, 10);
+          const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(head);
+          if (!m) return "";
+          const [, y, mo, d] = m;
+          return `${d}.${mo}.${y}`;
+        };
+
+        const dayIndices = confDays
+          .map((d) => Number(d.index))
+          .filter((n) => Number.isFinite(n));
+        totalDays =
+          dayIndices.length > 0
+            ? Math.max(...dayIndices)
+            : confDays.length;
+
+        let startIso = conf.start;
+        let endIso = conf.end;
+        if (!startIso || !endIso) {
+          const sortedDates = confDays
+            .map((d) => d.date)
+            .filter(Boolean)
+            .sort();
+          if (sortedDates.length) {
+            startIso = sortedDates[0];
+            endIso = sortedDates[sortedDates.length - 1];
+          }
+        }
+        const startDe = formatDeDate(startIso);
+        const endDe = formatDeDate(endIso);
+        if (startDe && endDe) {
+          headerDateRange =
+            startDe === endDe ? startDe : `${startDe} – ${endDe}`;
+        }
+
+        stationName =
+          (typeof conf.title === "string" && conf.title.trim()) ||
+          (typeof conf.name === "string" && conf.name.trim()) ||
+          (typeof conf.acronym === "string" && conf.acronym.trim()) ||
+          "";
+
+        if (headerLeft && headerDateRange)
+          headerLeft.textContent = headerDateRange;
+        updateStationTitle(buildFilterLabelParts());
 
         // Fetch widget JSON for breaks/pauses
         let widgetData = null;
