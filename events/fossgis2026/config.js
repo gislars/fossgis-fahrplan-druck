@@ -1,6 +1,6 @@
 /**
  * FOSSGIS 2026: event-spezifische Konfiguration (Track-Kürzel, Pretalx-URL,
- * Zeitfenster für die Darstellung, Pausen-Texte, Akzent-Räume, Livestreams).
+ * Zeitfenster, Pausen-Texte, Akzent-Räume, Livestreams, Raum-Kürzel).
  * Wird von index.html vor dem Hauptskript geladen.
  */
 window.FossgisFahrplanEventConfig = {
@@ -61,5 +61,33 @@ window.FossgisFahrplanEventConfig = {
     OSM3: "",
     OO: "",
     Post: "",
+  },
+
+  /** Kürzel für Raumnamen (Fahrplan, Legende, Filter). */
+  abbreviateRoom(roomName) {
+    if (roomName.startsWith("HS1")) return "HS1";
+    if (roomName.startsWith("HS2")) return "HS2";
+    if (roomName.startsWith("HS3")) return "HS3";
+    if (roomName.startsWith("HS4")) return "HS4";
+    if (roomName.startsWith("BoF1")) return "BoF1";
+    if (roomName.startsWith("BoF2")) return "BoF2";
+    if (roomName.startsWith("Bof3") || roomName.includes("Expert:innen"))
+      return "BoF3";
+    if (roomName.startsWith("WS1")) return "WS1";
+    if (roomName.startsWith("WS2")) return "WS2";
+    if (roomName.startsWith("WS3")) return "WS3";
+    if (roomName.startsWith("WS4")) return "WS4";
+    if (roomName.startsWith("OSM1")) return "OSM1";
+    if (roomName.startsWith("OSM2")) return "OSM2";
+    if (roomName.startsWith("OSM3")) return "OSM3";
+    if (roomName.includes("Opening OSM")) return "OO";
+    if (roomName.toLowerCase().includes("posterausstellung")) return "Post";
+    if (
+      roomName.includes("Foyer MH") ||
+      roomName.toLowerCase().includes("community sprint")
+    )
+      return "Foyer";
+    if (roomName === "Mensa") return "Mensa";
+    return "*";
   },
 };
